@@ -493,105 +493,122 @@ class _InicioPageState extends State<InicioPage> {
         child: SafeArea(
           child: Stack(
             children: [
-              // Contenido principal
-              Column(
+                            // Contenido principal con Stack para z-index
+              Stack(
                 children: [
-                  // Imagen principal
-                  if (!_showCrearCuentaForm && !_showLoginForm) ...[
-                    const SizedBox(height: 60),
-                    Center(
-                      child: Image.asset(
-                        'assets/images/1inicio/home.png',
-                        width: 370,
+                  // Imagen de fondo (z-index más bajo)
+                  Positioned(
+                    top: 25,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      width: double.infinity,
+                      child: Opacity(
+                        opacity: _showCrearCuentaForm || _showLoginForm ? 0.6 : 1.0, // 60% si hay formularios, 100% si no
+                        child: Image.asset(
+                          'assets/images/1inicio/home.png',
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                    const Spacer(),
-                  ],
+                  ),
                   
-                  // Botones principales en la parte inferior
-                  if (!_showCrearCuentaForm && !_showLoginForm) ...[
-                    const Spacer(),
-                    // Fila de botones
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          // Botón "Soy nuevo"
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _showCrearCuentaForm = true;
-                              });
-                            },
-                            child: Container(
-                              width: 160,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(25),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  'Soy nuevo',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                  // Contenido principal (z-index más alto)
+                  Column(
+                    children: [
+                      // Espacio para la imagen
+                      const SizedBox(height: 0),
+                      
+                      // Botones principales en la parte inferior
+                      if (!_showCrearCuentaForm && !_showLoginForm) ...[
+                        const Spacer(),
+                        // Fila de botones
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              // Botón "Soy nuevo"
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _showCrearCuentaForm = true;
+                                  });
+                                },
+                                child: Container(
+                                  width: 160,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(25),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'Soy nuevo',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
-                          
-                          // Botón "Soy usuario"
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _showLoginForm = true;
-                              });
-                            },
-                            child: Container(
-                              width: 160,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(25),
-                                gradient: const LinearGradient(
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                  colors: [Color(0xFFFF1744), Color(0xFFE91E63)],
-                                ),
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  'Soy usuario',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
+                              
+                              // Botón "Soy usuario"
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _showLoginForm = true;
+                                  });
+                                },
+                                child: Container(
+                                  width: 160,
+                                  height: 50,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(25),
+                                    gradient: const LinearGradient(
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                      colors: [Color(0xFFFF1744), Color(0xFFE91E63)],
+                                    ),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'Soy usuario',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                  ],
-                  
-                  // Formulario de crear cuenta
-                  if (_showCrearCuentaForm) _buildCrearCuentaForm(),
-                  
-                  // Formulario de login
-                  if (_showLoginForm) _buildLoginForm(),
-                  
-                  // Formulario de recuperar password
-                  if (_showRecuperarPasswordForm) _buildRecuperarPasswordForm(),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
+                      
+                      // Formulario de crear cuenta
+                      if (_showCrearCuentaForm) _buildCrearCuentaForm(),
+                      
+                      // Formulario de login
+                      if (_showLoginForm) ...[
+                        const SizedBox(height: 100),
+                        _buildLoginForm(),
+                      ],
+                      
+                      // Formulario de recuperar password
+                      if (_showRecuperarPasswordForm) _buildRecuperarPasswordForm(),
+                    ],
+                  ),
                 ],
               ),
             ],
@@ -606,9 +623,9 @@ class _InicioPageState extends State<InicioPage> {
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(20),
-      height: MediaQuery.of(context).size.height - 150, // Altura reducida para evitar overflow
+      height: MediaQuery.of(context).size.height - 150, // Altura restaurada ya que no hay overlap
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.8),
+        color: const Color(0xFF161351).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.2),
@@ -982,7 +999,7 @@ class _InicioPageState extends State<InicioPage> {
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.8),
+        color: const Color(0xFF161351).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.2),
@@ -1161,7 +1178,7 @@ class _InicioPageState extends State<InicioPage> {
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.8),
+        color: const Color(0xFF161351).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.2),
