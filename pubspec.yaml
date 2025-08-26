@@ -82,6 +82,7 @@ flutter:
     - assets/images/caja/
     - assets/images/poder/
     - assets/images/aprendiendo/
+    - assets/images/agentes/
     - assets/audios/
     - assets/videos/
     - assets/fonts/
