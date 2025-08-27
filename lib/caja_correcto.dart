@@ -167,26 +167,27 @@ class _CajaScreenState extends State<CajaScreen> {
             children: [
               // Ficha base blanca posicionada en punto medio
               Positioned(
-                left: 23,
+                left: 30, // Centrado: (60 - 40) / 2 = 10, entonces 20 + 10 = 30
                 top: 30,
                 child: Container(
-                  width: 393,
+                  width: MediaQuery.of(context).size.width - 60, // Reducido de 40 a 60 para más margen
                   height: 580,
                   decoration: BoxDecoration(
                     image: DecorationImage(
                       image: AssetImage('assets/images/caja/base-ficha.png'),
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain, // Cambiado de cover a contain para que no se estire
+                      alignment: Alignment.center,
                     ),
                   ),
                   child: Stack(
                     children: [
                       // Plasta de texto con scroll
                       Positioned(
-                        bottom: 30,
-                        left: 20,
-                        right: 20,
+                        bottom: 60, // Aumentado de 50 a 60 para subir el borde inferior otros 10px
+                        left: 30, // Aumentado de 20 a 30
+                        right: 30, // Aumentado de 20 a 30
                         child: Container(
-                          height: 350,
+                          height: 320, // Reducido de 330 a 320 (otros 10px menos)
                           decoration: BoxDecoration(
                             image: DecorationImage(
                               image: AssetImage('assets/images/caja/plasta-texto-scroll.png'),
@@ -194,7 +195,7 @@ class _CajaScreenState extends State<CajaScreen> {
                             ),
                           ),
                           child: SingleChildScrollView(
-                            padding: EdgeInsets.all(20),
+                            padding: EdgeInsets.all(30), // Aumentado de 20 a 30
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -289,18 +290,20 @@ class _CajaScreenState extends State<CajaScreen> {
               
               // Título de la ficha encima de la plasta blanca
               Positioned(
-                left: 23,
+                left: 30, // Centrado: (60 - 40) / 2 = 10, entonces 20 + 10 = 30
                 top: 30,
-                child: Image.asset(
-                  'assets/images/caja/titulo-ficha1.png',
-                  width: 393,
-                  fit: BoxFit.fitWidth,
+                child: Container(
+                  width: MediaQuery.of(context).size.width - 60, // Reducido de 40 a 60 para más margen
+                  child: Image.asset(
+                    'assets/images/caja/titulo-ficha1.png',
+                    fit: BoxFit.fitWidth,
+                  ),
                 ),
               ),
               
               // Botón siguiente centrado encima del título de la ficha
               Positioned(
-                left: 123,
+                left: (MediaQuery.of(context).size.width - 91.5) / 2, // Centrado responsive
                 top: 160,
                 child: Center(
                   child: GestureDetector(
@@ -320,7 +323,7 @@ class _CajaScreenState extends State<CajaScreen> {
               
               // Elementos decorativos chunche-f y chunche-g
               Positioned(
-                left: 43,
+                left: 20, // Reducido de 43
                 top: 215,
                 child: Image.asset(
                   'assets/images/caja/chunche-f.png',
@@ -329,7 +332,7 @@ class _CajaScreenState extends State<CajaScreen> {
                 ),
               ),
               Positioned(
-                right: 43,
+                right: 20, // Reducido de 43
                 top: 230,
                 child: Image.asset(
                   'assets/images/caja/chunche-g.png',

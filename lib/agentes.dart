@@ -100,8 +100,13 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
         child: Stack(
           children: [
             // Contenido principal de la pantalla
-            SafeArea(
-              child: Column(
+            MediaQuery.removePadding(
+              context: context,
+              removeLeft: true,
+              removeRight: true,
+              child: SafeArea(
+                maintainBottomViewPadding: false,
+                child: Column(
                 children: [
                   // Header de navegación reutilizable
                   HeaderNavigation(
@@ -113,9 +118,9 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
                   ),
                   
                   // Tabs de categorías
-                  Container(
-                    margin: EdgeInsets.symmetric(horizontal: 20),
-                    decoration: BoxDecoration(
+                          Container(
+                    margin: EdgeInsets.symmetric(horizontal: 15), // Reducido de 20 a 15
+                            decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(25),
                     ),
@@ -155,10 +160,10 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
                 },
                       tabs: categories.map((category) => Tab(text: category)).toList(),
                     ),
-                  ),
-                  
-                  SizedBox(height: 20),
-                  
+                          ),
+                          
+                          SizedBox(height: 20),
+                          
                               // Contenido de agentes con transiciones fluidas
             Expanded(
               child: PageView(
@@ -179,6 +184,7 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
                 ],
               ),
             ),
+          ),
             
             // Menú inferior reutilizable
             Positioned(
@@ -401,45 +407,44 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
     return Column(
         children: [
           // 1. Personajes-agentes como fondo + Cubitos + Texto-intro + Botón (z-index completo)
-          Expanded(
+                    Expanded(
             child: Stack(
               children: [
                 // Personajes-agentes como fondo (z-index abajo) - Subido 30px desde bottom
                 Positioned(
                   bottom: 30,
-                  left: 0,
-                  right: 0,
+                  left: 0, // Sin margen izquierdo - se pega al borde
+                  right: 0, // Sin margen derecho - se pega al borde
                   child: Container(
-                    width: double.infinity,
+                    width: double.infinity, // Ancho completo
                     child: Image.asset(
                       'assets/images/agentes/personajes-agentes.png',
                       fit: BoxFit.cover,
-                      width: double.infinity,
                     ),
                   ),
                 ),
                 
-                // Cubitos encima (z-index medio-bajo) - Bajado 20px
-                Positioned(
-                  top: 20,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    width: double.infinity,
-                    child: Image.asset(
-                      'assets/images/agentes/cubitos.png',
-                      fit: BoxFit.contain,
+                                  // Cubitos encima (z-index medio-bajo) - Bajado 20px
+                  Positioned(
+                    top: 20,
+                    left: 0, // Sin margen izquierdo - se pega al borde
+                    right: 0, // Sin margen derecho - se pega al borde
+                    child: Container(
+                      width: double.infinity, // Ancho completo
+                      child: Image.asset(
+                        'assets/images/agentes/cubitos.png',
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
-                ),
                 
                 // Texto-intro encima de cubitos (z-index medio-alto) - Ancho reducido y subido 10px
                 Positioned(
                   top: -10,
-                  left: 40,
-                  right: 40,
+                  left: 30, // Reducido de 40 a 30
+                  right: 30, // Reducido de 40 a 30
                   child: Container(
-                    width: double.infinity,
+                    width: MediaQuery.of(context).size.width - 60, // Responsive
                     child: Image.asset(
                       'assets/images/agentes/texto-intro.png',
                       fit: BoxFit.contain,
@@ -479,7 +484,7 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
               borderRadius: BorderRadius.circular(10),
               child: Image.asset(
                 'assets/images/agentes/anty1.png',
-                width: 300, // Ancho específico para hacerla más pequeña
+                width: MediaQuery.of(context).size.width * 0.8, // 80% del ancho de pantalla
                 fit: BoxFit.contain, // Mantiene proporciones completas
               ),
             ),
@@ -515,7 +520,7 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
               borderRadius: BorderRadius.circular(10),
               child: Image.asset(
                 'assets/images/agentes/anty2.png',
-                width: 300, // Ancho específico para hacerla más pequeña
+                width: MediaQuery.of(context).size.width * 0.8, // 80% del ancho de pantalla
                 fit: BoxFit.contain, // Mantiene proporciones completas
               ),
             ),

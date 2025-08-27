@@ -51,23 +51,29 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
         child: Stack(
           children: [
             // Contenido principal de la pantalla
-            SafeArea(
-              child: Column(
-                children: [
-                  // Header de navegación reutilizable
-                  HeaderNavigation(
-                    onMenuTap: () {
-                      Navigator.pushReplacementNamed(context, '/menu');
-                    },
-                    title: 'BIENVENIDOS',
-                    subtitle: 'APRENDIENDO LA\nMANERA COOPERATIVA',
-                  ),
-                  
-                  // Contenido específico de la pantalla
-                  Expanded(
-                    child: _buildFichasSystem(),
-                  ),
-                ],
+            MediaQuery.removePadding(
+              context: context,
+              removeLeft: true,
+              removeRight: true,
+              child: SafeArea(
+                maintainBottomViewPadding: false,
+                child: Column(
+                  children: [
+                    // Header de navegación reutilizable
+                    HeaderNavigation(
+                      onMenuTap: () {
+                        Navigator.pushReplacementNamed(context, '/menu');
+                      },
+                      title: 'BIENVENIDOS',
+                      subtitle: 'APRENDIENDO LA\nMANERA COOPERATIVA',
+                    ),
+                    
+                    // Contenido específico de la pantalla
+                    Expanded(
+                      child: _buildFichasSystem(),
+                    ),
+                  ],
+                ),
               ),
             ),
             
@@ -278,19 +284,19 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
         children: [
           // base01-fondo (z-index 2) - Fondo base
           Positioned(
-            left: 23,
+            left: 20, // Reducido de 23
             top: 30,
             child: Container(
-              width: 393,
+              width: MediaQuery.of(context).size.width - 40, // Responsive en lugar de 393 fijo
               height: 646,
               child: Image.asset(
                 'assets/images/aprendiendo/base0${fichaIndex}-fondo.png',
-                width: 393,
+                width: MediaQuery.of(context).size.width - 40, // Responsive
                 height: 646,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
-                    width: 393,
+                    width: MediaQuery.of(context).size.width - 40, // Responsive
                     height: 646,
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -363,10 +369,10 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
           
                      // base01 (z-index 4) - Contenido principal, 50 píxeles arriba del bottom
            Positioned(
-             left: 23,
+             left: 20, // Reducido de 23
              top: 30,
              child: Container(
-               width: 393,
+               width: MediaQuery.of(context).size.width - 40, // Responsive en lugar de 393 fijo
                height: 646,
                child: Align(
                  alignment: Alignment.bottomCenter,
@@ -374,12 +380,12 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
                      offset: Offset(0, 50),
                      child: Image.asset(
                        'assets/images/aprendiendo/base0${fichaIndex}.png',
-                       width: 393,
+                       width: MediaQuery.of(context).size.width - 40, // Responsive
                        height: 646,
                        fit: BoxFit.contain,
                        errorBuilder: (context, error, stackTrace) {
                          return Container(
-                           width: 393,
+                           width: MediaQuery.of(context).size.width - 40, // Responsive
                            height: 646,
                            decoration: BoxDecoration(
                              color: Colors.transparent,
@@ -405,7 +411,7 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
           
           // mas-info (z-index 5) - Botón pegado al margen derecho
           Positioned(
-            right: 23,
+            right: 20, // Reducido de 23
             top: 30,
             child: GestureDetector(
               onTap: () {

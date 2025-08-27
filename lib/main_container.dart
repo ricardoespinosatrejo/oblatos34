@@ -344,7 +344,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> with TickerProvid
                     Center(
                       child: ClipOval(
                         child: Image.asset(
-                          'assets/images/1inicio/logo-CO.png', // Usar logo como foto por defecto
+                          'assets/images/1inicio/perfil.png', // Usar logo como foto por defecto
                           width: 50,
                           height: 50,
                           fit: BoxFit.cover,
@@ -819,7 +819,7 @@ class CajaScreenContent extends StatelessWidget {
                           Center(
                             child: ClipOval(
                               child: Image.asset(
-                                'assets/images/1inicio/logo-CO.png', // Usar logo como foto por defecto
+                                'assets/images/1inicio/perfil.png', // Usar logo como foto por defecto
                                 width: 50,
                                 height: 50,
                                 fit: BoxFit.cover,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:provider/provider.dart';
 import '../user_manager.dart';
 
@@ -44,7 +43,7 @@ class HeaderNavigation extends StatelessWidget {
                   subtitle,
                   style: TextStyle(
                     fontFamily: 'Gryzensa',
-                    fontSize: 30,
+                    fontSize: 28, // Reducido de 30 a 28
                     fontWeight: FontWeight.w300,
                     color: Colors.white70,
                     height: 0.8, // Reducir interlineado para juntar las líneas
@@ -97,7 +96,7 @@ class HeaderNavigation extends StatelessWidget {
                       Center(
                         child: ClipOval(
                           child: Image.asset(
-                            'assets/images/1inicio/logo-CO.png',
+                            'assets/images/1inicio/perfil.png',
                             width: 50,
                             height: 50,
                             fit: BoxFit.cover,

@@ -59,23 +59,29 @@ class _PoderCooperacionScreenState extends State<PoderCooperacionScreen> {
         child: Stack(
           children: [
             // Contenido principal de la pantalla
-            SafeArea(
-              child: Column(
-                children: [
-                  // Header de navegación reutilizable
-                  HeaderNavigation(
-                    onMenuTap: () {
-                      Navigator.pushReplacementNamed(context, '/menu');
-                    },
-                    title: 'BIENVENIDOS',
-                    subtitle: 'EL CORAZÓN DE\nCAJA OBLATOS',
-                  ),
-                  
-                  // Contenido específico de la pantalla
-                  Expanded(
-                    child: _buildFichasSystem(),
-                  ),
-                ],
+            MediaQuery.removePadding(
+              context: context,
+              removeLeft: true,
+              removeRight: true,
+              child: SafeArea(
+                maintainBottomViewPadding: false,
+                child: Column(
+                  children: [
+                    // Header de navegación reutilizable
+                    HeaderNavigation(
+                      onMenuTap: () {
+                        Navigator.pushReplacementNamed(context, '/menu');
+                      },
+                      title: 'BIENVENIDOS',
+                      subtitle: 'EL CORAZÓN DE\nCAJA OBLATOS',
+                    ),
+                    
+                    // Contenido específico de la pantalla
+                    Expanded(
+                      child: _buildFichasSystem(),
+                    ),
+                  ],
+                ),
               ),
             ),
             
@@ -221,15 +227,16 @@ class _PoderCooperacionScreenState extends State<PoderCooperacionScreen> {
       children: [
         // Ficha base blanca posicionada en punto medio
         Positioned(
-          left: 23,
+          left: 20, // Reducido de 23
           top: 30,
           child: Container(
-            width: 393,
+            width: MediaQuery.of(context).size.width - 40, // Responsive en lugar de 393 fijo
             height: 580,
             decoration: BoxDecoration(
               image: DecorationImage(
                                   image: AssetImage('assets/images/poder/base-ficha.png'),
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
+                alignment: Alignment.center,
               ),
             ),
             child: Stack(
