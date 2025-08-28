@@ -52,7 +52,7 @@ class _BienvenidaPageState extends State<BienvenidaPage> {
       child: Column(
         children: [
           // Espacio superior de 50px
-          SizedBox(height: 50),
+          const SizedBox(height: 50),
           
           // Carrusel de slides
           Expanded(
@@ -71,20 +71,20 @@ class _BienvenidaPageState extends State<BienvenidaPage> {
           
           // Indicadores de página (puntos)
           Container(
-            margin: EdgeInsets.only(bottom: 30),
+            margin: const EdgeInsets.only(bottom: 30),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
                 4,
                 (index) => Container(
-                  margin: EdgeInsets.symmetric(horizontal: 4),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
                   width: 8,
                   height: 8,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: _currentSlide == index + 1 
                       ? Colors.white 
-                      : Colors.white.withOpacity(0.5),
+                      : Colors.white.withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -103,7 +103,7 @@ class _BienvenidaPageState extends State<BienvenidaPage> {
         children: [
           // Imagen del slide
           Container(
-            margin: EdgeInsets.symmetric(horizontal: 20),
+            margin: const EdgeInsets.symmetric(horizontal: 20),
             child: Image.asset(
               'assets/images/instrucciones/slide${slideIndex}.png',
               width: 334,
@@ -120,7 +120,7 @@ class _BienvenidaPageState extends State<BienvenidaPage> {
                   child: Center(
                     child: Text(
                       'Slide $slideIndex',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
@@ -135,7 +135,7 @@ class _BienvenidaPageState extends State<BienvenidaPage> {
           // Botón "Comenzar" solo en el slide 4
           if (slideIndex == 4)
             Container(
-              margin: EdgeInsets.only(top: 30),
+              margin: const EdgeInsets.only(top: 30),
               child: GestureDetector(
                 onTap: () {
                   Navigator.pushReplacementNamed(context, '/home');
@@ -145,23 +145,23 @@ class _BienvenidaPageState extends State<BienvenidaPage> {
                   height: 56,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(28),
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                       colors: [Color(0xFFFF1744), Color(0xFFE91E63)],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.25),
+                        color: Colors.black.withValues(alpha: 0.25),
                         blurRadius: 12,
-                        offset: Offset(0, 6),
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
                   child: Center(
                     child: Text(
                       'Comenzar',
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class BottomNavigationMenu extends StatelessWidget {
-  const BottomNavigationMenu({Key? key}) : super(key: key);
+  final VoidCallback? onCenterTap;
+  const BottomNavigationMenu({Key? key, this.onCenterTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -12,6 +13,14 @@ class BottomNavigationMenu extends StatelessWidget {
           image: AssetImage('assets/images/menu/menu-barra.png'),
           fit: BoxFit.cover,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 16,
+            spreadRadius: 2,
+            offset: Offset(0, -2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -88,35 +97,38 @@ class BottomNavigationMenu extends StatelessWidget {
   Widget _buildCenterNavItem(String iconPath) {
     return Transform.translate(
       offset: Offset(-6, -14),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  Color(0xFFFF1744),
-                  Color(0xFFE91E63),
-                ],
+      child: GestureDetector(
+        onTap: onCenterTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Color(0xFFFF1744),
+                    Color(0xFFE91E63),
+                  ],
+                ),
+                border: Border.all(color: Colors.black, width: 1),
               ),
-              border: Border.all(color: Colors.black, width: 1),
-            ),
-            child: Center(
-              child: Image.asset(
-                'assets/images/menu/$iconPath',
-                width: 24,
-                height: 24,
-                color: Colors.white,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.home, color: Colors.white, size: 24);
-                },
+              child: Center(
+                child: Image.asset(
+                  'assets/images/menu/$iconPath',
+                  width: 24,
+                  height: 24,
+                  color: Colors.white,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.home, color: Colors.white, size: 24);
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

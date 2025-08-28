@@ -7,14 +7,33 @@ class AprendiendoCooperativaScreen extends StatefulWidget {
   _AprendiendoCooperativaScreenState createState() => _AprendiendoCooperativaScreenState();
 }
 
-class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScreen> {
+class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScreen> with TickerProviderStateMixin {
   int _currentFicha = 0; // 0 = ficha 1, 1 = ficha 2, 2 = ficha 3
   bool _showFoto = false; // Controla la animación de la foto
   final AudioPlayer _audioPlayer = AudioPlayer();
   
+  // Submenu state
+  bool _isSubmenuVisible = false;
+  late AnimationController _submenuAnimationController;
+  late Animation<Offset> _submenuSlideAnimation;
+  
   @override
   void initState() {
     super.initState();
+    
+    // Inicializar animación del submenu
+    _submenuAnimationController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _submenuSlideAnimation = Tween<Offset>(
+      begin: Offset(0, 1),
+      end: Offset(0, 0),
+    ).animate(CurvedAnimation(
+      parent: _submenuAnimationController,
+      curve: Curves.easeOutCubic,
+    ));
     
     // Activa la animación inicial de la foto
     Future.delayed(Duration(milliseconds: 500), () {
@@ -32,6 +51,7 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
   @override
   void dispose() {
     _audioPlayer.dispose();
+    _submenuAnimationController.dispose();
     super.dispose();
   }
   
@@ -77,6 +97,9 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
               ),
             ),
             
+            // Submenu (se muestra cuando se activa) - debe ir ANTES del menú rojo para quedar debajo
+            if (_isSubmenuVisible) _buildSubmenu(),
+            
             // Menú inferior rojo
             Positioned(
               bottom: 0,
@@ -89,6 +112,14 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
                     image: AssetImage('assets/images/menu/menu-barra.png'),
                     fit: BoxFit.cover,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.18),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                      offset: Offset(0, -2),
+                    ),
+                  ],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -148,37 +179,63 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
   Widget _buildCenterNavItem(String iconPath) {
     return Transform.translate(
       offset: Offset(-6, -14),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  Color(0xFFFF1744),
-                  Color(0xFFE91E63),
-                ],
+      child: GestureDetector(
+        onTap: _toggleSubmenu,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Color(0xFFFF1744),
+                    Color(0xFFE91E63),
+                  ],
+                ),
+                border: Border.all(color: Colors.black, width: 1),
               ),
-              border: Border.all(color: Colors.black, width: 1),
-            ),
-            child: Center(
-              child: Image.asset(
-                'assets/images/menu/$iconPath',
-                width: 24,
-                height: 24,
-                color: Colors.white,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.home, color: Colors.white, size: 24);
-                },
+              child: Center(
+                child: Image.asset(
+                  'assets/images/menu/$iconPath',
+                  width: 24,
+                  height: 24,
+                  color: Colors.white,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.home, color: Colors.white, size: 24);
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+  
+  void _toggleSubmenu() async {
+    if (_isSubmenuVisible) {
+      _submenuAnimationController.reverse().then((_) {
+        if (mounted) {
+          setState(() {
+            _isSubmenuVisible = false;
+          });
+        }
+      });
+    } else {
+      setState(() {
+        _isSubmenuVisible = true;
+      });
+      _submenuAnimationController.forward();
+
+      try {
+        await _audioPlayer.play(AssetSource('audios/ding.mp3'));
+      } catch (e) {
+        print('Error reproduciendo audio: $e');
+      }
+    }
   }
   
   // Reproduce el sonido de cambio de ficha
@@ -274,6 +331,130 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
           child: _buildFichaCompleta(3),
         ),
       ],
+    );
+  }
+
+  Widget _buildSubmenu() {
+    return Positioned(
+      bottom: -10, // Pegado al borde inferior de la pantalla
+      left: 0,
+      right: 0,
+      child: SlideTransition(
+        position: _submenuSlideAnimation,
+        child: Container(
+          height: 375,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/submenu/plasta-menu.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: 40,
+                left: 0,
+                right: 0,
+                child: Text(
+                  'Herramientas Financieras',
+                  style: TextStyle(
+                    fontFamily: 'GothamRounded',
+                    fontSize: 14,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Positioned(
+                top: 68,
+                left: 0,
+                child: Image.asset(
+                  'assets/images/submenu/moneda2.png',
+                  width: 30,
+                  height: 130,
+                ),
+              ),
+              Positioned(
+                top: 58,
+                right: 10,
+                child: Image.asset(
+                  'assets/images/submenu/moneda1.png',
+                  width: 46,
+                  height: 47,
+                ),
+              ),
+              Positioned(
+                top: 68,
+                left: 0,
+                right: 0,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            print('Navegar al juego');
+                          },
+                          child: Image.asset(
+                            'assets/images/submenu/btn-juego.png',
+                            height: 156,
+                          ),
+                        ),
+                        SizedBox(width: 9),
+                        GestureDetector(
+                          onTap: () {
+                            print('Navegar a la calculadora');
+                          },
+                          child: Image.asset(
+                            'assets/images/submenu/btn-calculadora.png',
+                            height: 150,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 156,
+                          child: Text(
+                            'Juego',
+                            style: TextStyle(
+                              fontFamily: 'GothamRounded',
+                              fontSize: 12,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        SizedBox(width: 9),
+                        SizedBox(
+                          width: 150,
+                          child: Text(
+                            'Calculadora',
+                            style: TextStyle(
+                              fontFamily: 'GothamRounded',
+                              fontSize: 12,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

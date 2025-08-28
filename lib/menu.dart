@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'inicio.dart'; // Para acceder a ProfileImageManager
 import 'user_manager.dart';
 
@@ -14,6 +15,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   // Controladores para las animaciones fade in de los botones
   late List<AnimationController> _buttonAnimationControllers;
   late List<Animation<double>> _buttonAnimations;
+  
+  // Variables para el submenu
+  bool _isSubmenuVisible = false;
+  late AnimationController _submenuAnimationController;
+  late Animation<Offset> _submenuSlideAnimation;
+  final AudioPlayer _centerButtonPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -35,6 +42,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     
     // Iniciar animaciones con delay escalonado
     _startButtonAnimations();
+    
+    // Inicializar controlador de animación del submenu
+    _submenuAnimationController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+    
+    _submenuSlideAnimation = Tween<Offset>(
+      begin: Offset(0, 1), // Comienza debajo de la pantalla
+      end: Offset(0, 0),   // Termina en su posición final
+    ).animate(CurvedAnimation(
+      parent: _submenuAnimationController,
+      curve: Curves.easeOutCubic,
+    ));
   }
   
   void _startButtonAnimations() {
@@ -44,6 +65,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           _buttonAnimationControllers[i].forward();
         }
       });
+    }
+  }
+  
+  void _toggleSubmenu() async {
+    if (_isSubmenuVisible) {
+      // Si está visible, animar hacia abajo y luego ocultar
+      _submenuAnimationController.reverse().then((_) {
+        if (mounted) {
+          setState(() {
+            _isSubmenuVisible = false;
+          });
+        }
+      });
+    } else {
+      // Si está oculto, mostrar y animar hacia arriba
+      setState(() {
+        _isSubmenuVisible = true;
+      });
+      _submenuAnimationController.forward();
+      try {
+        await _centerButtonPlayer.play(AssetSource('audios/ding.mp3'));
+      } catch (_) {}
     }
   }
 
@@ -175,6 +218,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: _buildBottomSection(),
               ),
             ),
+            
+            // Submenu (se muestra cuando se activa)
+            if (_isSubmenuVisible) _buildSubmenu(),
             
             // Bottom Navigation
             Positioned(
@@ -954,6 +1000,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           image: AssetImage('assets/images/menu/menu-barra.png'),
           fit: BoxFit.cover,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 16,
+            spreadRadius: 2,
+            offset: Offset(0, -2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1030,35 +1084,173 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildCenterNavItem(String iconPath) {
     return Transform.translate(
       offset: Offset(-6, -14),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  Color(0xFFFF1744),
-                  Color(0xFFE91E63),
-                ],
+      child: GestureDetector(
+        onTap: _toggleSubmenu,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Color(0xFFFF1744),
+                    Color(0xFFE91E63),
+                  ],
+                ),
+                border: Border.all(color: Colors.black, width: 1),
               ),
-              border: Border.all(color: Colors.black, width: 1),
+              child: Center(
+                child: Image.asset(
+                  'assets/images/menu/$iconPath',
+                  width: 24,
+                  height: 24,
+                  color: Colors.white,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.home, color: Colors.white, size: 24);
+                  },
+                ),
+              ),
             ),
-            child: Center(
-              child: Image.asset(
-                'assets/images/menu/$iconPath',
-                width: 24,
-                height: 24,
-                color: Colors.white,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.home, color: Colors.white, size: 24);
-                },
-              ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildSubmenu() {
+    return Positioned(
+      bottom: -10, // Más pegado al borde inferior de la pantalla
+      left: 0,
+      right: 0,
+      child: SlideTransition(
+        position: _submenuSlideAnimation,
+        child: Container(
+          height: 375,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/submenu/plasta-menu.png'),
+              fit: BoxFit.cover,
             ),
           ),
-        ],
+          child: Stack(
+            children: [
+              // Título "Herramientas Financieras"
+              Positioned(
+                top: 40, // Centrado entre borde superior y botones
+                left: 0,
+                right: 0,
+                child: Text(
+                  'Herramientas Financieras',
+                  style: TextStyle(
+                    fontFamily: 'GothamRounded',
+                    fontSize: 14,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              
+              // Elementos decorativos - Monedas
+              Positioned(
+                top: 68, // Misma altura que btn-juego
+                left: 0, // Pegada totalmente al borde izquierdo
+                child: Image.asset(
+                  'assets/images/submenu/moneda2.png',
+                  width: 30,
+                  height: 130,
+                ),
+              ),
+              Positioned(
+                top: 58, // 10px más arriba que antes
+                right: 10, // 10px separada del borde derecho
+                child: Image.asset(
+                  'assets/images/submenu/moneda1.png',
+                  width: 46,
+                  height: 47,
+                ),
+              ),
+              
+              // Botones del submenu
+              Positioned(
+                top: 68,
+                left: 0,
+                right: 0,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            // TODO: Navegar al juego
+                            print('Navegar al juego');
+                          },
+                          child: Image.asset(
+                            'assets/images/submenu/btn-juego.png',
+                            height: 156,
+                          ),
+                        ),
+                        SizedBox(width: 9), // Gap de 9px entre botones
+                        GestureDetector(
+                          onTap: () {
+                            // TODO: Navegar a la calculadora
+                            print('Navegar a la calculadora');
+                          },
+                          child: Image.asset(
+                            'assets/images/submenu/btn-calculadora.png',
+                            height: 150,
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    // Etiquetas de los botones
+                    SizedBox(height: 10), // Espacio entre botones y etiquetas
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Etiqueta "Juego"
+                        SizedBox(
+                          width: 156, // Mismo ancho que btn-juego
+                          child: Text(
+                            'Juego',
+                            style: TextStyle(
+                              fontFamily: 'GothamRounded',
+                              fontSize: 12,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        SizedBox(width: 9), // Gap de 9px entre etiquetas
+                        // Etiqueta "Calculadora"
+                        SizedBox(
+                          width: 150, // Mismo ancho que btn-calculadora
+                          child: Text(
+                            'Calculadora',
+                            style: TextStyle(
+                              fontFamily: 'GothamRounded',
+                              fontSize: 12,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1071,6 +1263,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     for (var controller in _buttonAnimationControllers) {
       controller.dispose();
     }
+    
+    // Dispose del controlador de animación del submenu
+    _submenuAnimationController.dispose();
+    _centerButtonPlayer.dispose();
+    
     super.dispose();
   }
 }

@@ -1,15 +1,65 @@
 import 'package:flutter/material.dart';
 import 'inicio.dart'; // Para acceder a ProfileImageManager
 import 'widgets/header_navigation.dart'; // Para el HeaderNavigation reutilizable
+import 'widgets/submenu_widget.dart';
 
 class CajaScreen extends StatefulWidget {
   @override
   _CajaScreenState createState() => _CajaScreenState();
 }
 
-class _CajaScreenState extends State<CajaScreen> {
+class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
   bool _showFicha = true; // Controla si mostrar la ficha o la historia
   
+  // Variables para el submenu
+  bool _isSubmenuVisible = false;
+  late AnimationController _submenuAnimationController;
+  late Animation<Offset> _submenuSlideAnimation;
+  
+  @override
+  void initState() {
+    super.initState();
+    
+    // Inicializar controlador de animación del submenu
+    _submenuAnimationController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _submenuSlideAnimation = Tween<Offset>(
+      begin: Offset(0, 1), // Comienza debajo de la pantalla
+      end: Offset(0, 0),   // Termina en su posición final
+    ).animate(CurvedAnimation(
+      parent: _submenuAnimationController,
+      curve: Curves.easeOutCubic,
+    ));
+  }
+  
+  @override
+  void dispose() {
+    _submenuAnimationController.dispose();
+    super.dispose();
+  }
+
+  void _toggleSubmenu() {
+    if (_isSubmenuVisible) {
+      // Si está visible, animar hacia abajo y luego ocultar
+      _submenuAnimationController.reverse().then((_) {
+        if (mounted) {
+          setState(() {
+            _isSubmenuVisible = false;
+          });
+        }
+      });
+    } else {
+      // Si está oculto, mostrar y animar hacia arriba
+      setState(() {
+        _isSubmenuVisible = true;
+      });
+      _submenuAnimationController.forward();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,6 +95,9 @@ class _CajaScreenState extends State<CajaScreen> {
                 ],
               ),
             ),
+            
+            // Submenu (se muestra cuando se activa)
+            if (_isSubmenuVisible) _buildSubmenu(),
             
             // Menú inferior rojo
             Positioned(
@@ -117,35 +170,38 @@ class _CajaScreenState extends State<CajaScreen> {
   Widget _buildCenterNavItem(String iconPath) {
     return Transform.translate(
       offset: Offset(-6, -14),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  Color(0xFFFF1744),
-                  Color(0xFFE91E63),
-                ],
+      child: GestureDetector(
+        onTap: _toggleSubmenu,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Color(0xFFFF1744),
+                    Color(0xFFE91E63),
+                  ],
+                ),
+                border: Border.all(color: Colors.black, width: 1),
               ),
-              border: Border.all(color: Colors.black, width: 1),
-            ),
-            child: Center(
-              child: Image.asset(
-                'assets/images/menu/$iconPath',
-                width: 24,
-                height: 24,
-                color: Colors.white,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.home, color: Colors.white, size: 24);
-                },
+              child: Center(
+                child: Image.asset(
+                  'assets/images/menu/$iconPath',
+                  width: 24,
+                  height: 24,
+                  color: Colors.white,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.home, color: Colors.white, size: 24);
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -405,5 +461,138 @@ class _CajaScreenState extends State<CajaScreen> {
     );
   }
 
+  Widget _buildSubmenu() {
+    return Positioned(
+      bottom: -10, // Pegado al borde inferior de la pantalla
+      left: 0,
+      right: 0,
+      child: SlideTransition(
+        position: _submenuSlideAnimation,
+        child: Container(
+          height: 375,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/submenu/plasta-menu.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Stack(
+            children: [
+              // Título "Herramientas Financieras"
+              Positioned(
+                top: 40,
+                left: 0,
+                right: 0,
+                child: Text(
+                  'Herramientas Financieras',
+                  style: TextStyle(
+                    fontFamily: 'GothamRounded',
+                    fontSize: 14,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
 
+              // Elementos decorativos - Monedas
+              Positioned(
+                top: 68,
+                left: 0,
+                child: Image.asset(
+                  'assets/images/submenu/moneda2.png',
+                  width: 30,
+                  height: 130,
+                ),
+              ),
+              Positioned(
+                top: 58,
+                right: 10,
+                child: Image.asset(
+                  'assets/images/submenu/moneda1.png',
+                  width: 46,
+                  height: 47,
+                ),
+              ),
+
+              // Botones del submenu
+              Positioned(
+                top: 68,
+                left: 0,
+                right: 0,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            // TODO: Navegar al juego
+                            print('Navegar al juego');
+                          },
+                          child: Image.asset(
+                            'assets/images/submenu/btn-juego.png',
+                            height: 156,
+                          ),
+                        ),
+                        SizedBox(width: 9),
+                        GestureDetector(
+                          onTap: () {
+                            // TODO: Navegar a la calculadora
+                            print('Navegar a la calculadora');
+                          },
+                          child: Image.asset(
+                            'assets/images/submenu/btn-calculadora.png',
+                            height: 150,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    // Etiquetas de los botones
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Etiqueta "Juego"
+                        SizedBox(
+                          width: 156,
+                          child: Text(
+                            'Juego',
+                            style: TextStyle(
+                              fontFamily: 'GothamRounded',
+                              fontSize: 12,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        SizedBox(width: 9),
+                        // Etiqueta "Calculadora"
+                        SizedBox(
+                          width: 150,
+                          child: Text(
+                            'Calculadora',
+                            style: TextStyle(
+                              fontFamily: 'GothamRounded',
+                              fontSize: 12,
+                              color: Colors.black,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

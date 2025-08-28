@@ -611,6 +611,8 @@ class _InicioPageState extends State<InicioPage> {
                   ),
                 ],
               ),
+              
+              // Submenu eliminado en inicio
             ],
           ),
         ),

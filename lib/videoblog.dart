@@ -2,18 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'widgets/header_navigation.dart';
+import 'widgets/bottom_navigation_menu.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class VideoBlogScreen extends StatefulWidget {
   @override
   _VideoBlogScreenState createState() => _VideoBlogScreenState();
 }
 
-class _VideoBlogScreenState extends State<VideoBlogScreen> {
+class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderStateMixin {
   int _currentVideo = 0; // 0 = lista de videos, 1-5 = video específico
   bool _showVideoList = true; // Controla si mostrar la lista o el video
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   ScrollController _textScrollController = ScrollController();
+  
+  // Submenu state
+  bool _isSubmenuVisible = false;
+  late AnimationController _submenuAnimationController;
+  late Animation<Offset> _submenuSlideAnimation;
+  final AudioPlayer _beepPlayer = AudioPlayer();
   
   // Variables para animación de fade-in secuencial
   List<bool> _buttonVisible = List.generate(5, (index) => false);
@@ -22,6 +30,17 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> {
   @override
   void initState() {
     super.initState();
+    _submenuAnimationController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _submenuSlideAnimation = Tween<Offset>(
+      begin: Offset(0, 1),
+      end: Offset(0, 0),
+    ).animate(CurvedAnimation(
+      parent: _submenuAnimationController,
+      curve: Curves.easeOutCubic,
+    ));
     // Animar los botones de video secuencialmente
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _animateButtonsSequentially();
@@ -33,7 +52,23 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> {
     _videoController?.dispose();
     _chewieController?.dispose();
     _textScrollController.dispose();
+    _submenuAnimationController.dispose();
+    _beepPlayer.dispose();
     super.dispose();
+  }
+  
+  void _toggleSubmenu() async {
+    if (_isSubmenuVisible) {
+      _submenuAnimationController.reverse().then((_) {
+        if (mounted) {
+          setState(() { _isSubmenuVisible = false; });
+        }
+      });
+    } else {
+      setState(() { _isSubmenuVisible = true; });
+      _submenuAnimationController.forward();
+      try { await _beepPlayer.play(AssetSource('audios/ding.mp3')); } catch (_) {}
+    }
   }
   
   // Anima el scroll del texto para mostrar que se puede hacer scroll
@@ -112,29 +147,26 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> {
               ),
             ),
             
-            // Menú inferior rojo
+            // Submenu (se muestra cuando se activa)
+            if (_isSubmenuVisible) _buildSubmenu(),
+
+            // Menú inferior rojo reutilizable
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
               child: Container(
-                height: 98,
                 decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/menu/menu-barra.png'),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildNavItem('m-icono1.png', 'Caja\nOblatos', '/caja'),
-                    _buildNavItem('m-icono2.png', 'Agentes\nCambio', '/agentes-cambio'),
-                    _buildCenterNavItem('m-icono3.png'),
-                    _buildNavItem('m-icono4.png', 'Eventos', '/eventos'),
-                    _buildNavItem('m-icono5.png', 'Video\nBlog', '/video-blog'),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.18),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                      offset: Offset(0, -2),
+                    ),
                   ],
                 ),
+                child: BottomNavigationMenu(onCenterTap: _toggleSubmenu),
               ),
             ),
           ],
@@ -242,6 +274,94 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> {
             child: _buildVideoFicha(i),
           ),
       ],
+    );
+  }
+
+  Widget _buildSubmenu() {
+    return Positioned(
+      bottom: -10,
+      left: 0,
+      right: 0,
+      child: SlideTransition(
+        position: _submenuSlideAnimation,
+        child: Container(
+          height: 375,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/submenu/plasta-menu.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: 40,
+                left: 0,
+                right: 0,
+                child: Text(
+                  'Herramientas Financieras',
+                  style: TextStyle(
+                    fontFamily: 'GothamRounded',
+                    fontSize: 14,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Positioned(
+                top: 68,
+                left: 0,
+                child: Image.asset('assets/images/submenu/moneda2.png', width: 30, height: 130),
+              ),
+              Positioned(
+                top: 58,
+                right: 10,
+                child: Image.asset('assets/images/submenu/moneda1.png', width: 46, height: 47),
+              ),
+              Positioned(
+                top: 68,
+                left: 0,
+                right: 0,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () { print('Navegar al juego'); },
+                          child: Image.asset('assets/images/submenu/btn-juego.png', height: 156),
+                        ),
+                        SizedBox(width: 9),
+                        GestureDetector(
+                          onTap: () { print('Navegar a la calculadora'); },
+                          child: Image.asset('assets/images/submenu/btn-calculadora.png', height: 150),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 156,
+                          child: Text('Juego', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                        ),
+                        SizedBox(width: 9),
+                        SizedBox(
+                          width: 150,
+                          child: Text('Calculadora', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
