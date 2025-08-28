@@ -312,41 +312,70 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           // Perfil de usuario
           Column(
             children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Color(0xFFE91E63), width: 2),
-                  color: Colors.white,
-                ),
-                child: Stack(
-                  children: [
-                    // Foto de perfil o imagen por defecto
-                    Center(
-                      child: ClipOval(
-                        child: Image.asset(
-                          'assets/images/1inicio/perfil.png', // Usar logo como foto por defecto
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
+              GestureDetector(
+                onTap: () async {
+                  // Reproducir audio antes de navegar
+                  try {
+                    final audioPlayer = AudioPlayer();
+                    await audioPlayer.play(AssetSource('audios/perfil.mp3'));
+                    await Future.delayed(Duration(milliseconds: 200));
+                    audioPlayer.dispose();
+                  } catch (e) {
+                    print('Error reproduciendo audio: $e');
+                  }
+                  
+                  Navigator.pushNamed(context, '/perfil');
+                },
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Color(0xFFE91E63), width: 2),
+                    color: Colors.white,
+                  ),
+                  child: Stack(
+                    children: [
+                      // Foto de perfil o imagen por defecto
+                      Center(
+                        child: ClipOval(
+                          child: Consumer<UserManager>(
+                            builder: (context, userManager, child) {
+                              final profileImage = userManager.currentUser?['profile_image'] ?? 1;
+                              return Image.asset(
+                                'assets/images/perfil/perfil$profileImage.png',
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  // Si falla, mostrar imagen por defecto
+                                  return Image.asset(
+                                    'assets/images/1inicio/perfil.png',
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                  );
+                                },
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        width: 16,
-                        height: 16,
-                        decoration: BoxDecoration(
-                          color: Color(0xFF4CAF50),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: Color(0xFF4CAF50),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: 4),

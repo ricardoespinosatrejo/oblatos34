@@ -79,7 +79,7 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
                   // Header de navegación reutilizable
                   HeaderNavigation(
                     onMenuTap: () {
-                      Navigator.pushReplacementNamed(context, '/menu');
+                      Navigator.pushNamed(context, '/menu');
                     },
                     title: 'BIENVENIDOS',
                     subtitle: 'EVENTOS Y\nCAMPAÑAS',

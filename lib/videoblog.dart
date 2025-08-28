@@ -133,7 +133,7 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
                   // Header de navegación reutilizable
                   HeaderNavigation(
                     onMenuTap: () {
-                      Navigator.pushReplacementNamed(context, '/menu');
+                      Navigator.pushNamed(context, '/menu');
                     },
                     title: 'BIENVENIDOS',
                     subtitle: 'VIDEO\nBLOG',

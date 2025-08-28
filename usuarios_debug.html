@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Usuarios Registrados</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Sistema de Usuarios</h1>
+    
+    <div class="debug">
+        <h3>Información de Conexión:</h3>
+        <p><strong>URL PHP:</strong> https://zumuradigital.com/app-oblatos-login/usuarios.php</p>
+        <p><strong>Estado:</strong> <span id="status">No probado</span></p>
+    </div>
+    
+    <div>
+        <button onclick="probarConexion()">🔗 Probar Conexión PHP</button>
+        <button onclick="verRespuestaCompleta()">📋 Ver Respuesta Completa</button>
+        <button onclick="probarConDatos()">📊 Probar con Datos de Prueba</button>
+    </div>
+    
+    <div id="resultado" class="debug"></div>
+    
+    <div id="datosPrueba" class="debug" style="display: none;">
+        <h3>📊 Datos de Prueba (Simulados):</h3>
+        <div id="tablaPrueba"></div>
+    </div>
+
+    <script>
+        function probarConexion() {
+            const status = document.getElementById('status');
+            const resultado = document.getElementById('resultado');
+            
+            status.textContent = 'Probando...';
+            resultado.innerHTML = '<p>🔄 Probando conexión...</p>';
+            
+            fetch('https://zumuradigital.com/app-oblatos-login/usuarios.php')
+                .then(response => {
+                    status.textContent = `HTTP ${response.status}`;
+                    resultado.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Conexión Exitosa</h4>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Status Text:</strong> ${response.statusText}</p>
+                            <p><strong>Headers:</strong> ${response.headers.get('content-type')}</p>
+                        </div>
+                    `;
+                    return response.json();
+                })
+                .then(data => {
+                    resultado.innerHTML += `
+                        <div class="success">
+                            <h4>📊 Datos Recibidos:</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                    
+                    if (data.success && data.usuarios) {
+                        mostrarUsuarios(data.usuarios);
+                    }
+                })
+                .catch(error => {
+                    status.textContent = 'Error';
+                    resultado.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Error de Conexión:</h4>
+                            <p><strong>Error:</strong> ${error.message}</p>
+                            <p><strong>Tipo:</strong> ${error.name}</p>
+                        </div>
+                    `;
+                });
+        }
+        
+        function verRespuestaCompleta() {
+            fetch('https://zumuradigital.com/app-oblatos-login/usuarios.php')
+                .then(response => response.text())
+                .then(text => {
+                    document.getElementById('resultado').innerHTML = `
+                        <div class="debug">
+                            <h4>📋 Respuesta Completa (Texto):</h4>
+                            <pre>${text}</pre>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    document.getElementById('resultado').innerHTML = `
+                        <div class="error">
+                            <h4>❌ Error:</h4>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                });
+        }
+        
+        function probarConDatos() {
+            const datosPrueba = [
+                {
+                    id: 1,
+                    nombre_usuario: "usuario_prueba",
+                    nombre_menor: "Juan Pérez",
+                    rango_edad: "13-15",
+                    nombre_padre_madre: "María Pérez",
+                    email: "juan@test.com",
+                    telefono: "+52 1234567890",
+                    puntos: 25,
+                    racha_dias: 3,
+                    ultima_sesion: "2024-01-15",
+                    fecha_registro: "2024-01-01"
+                }
+            ];
+            
+            document.getElementById('datosPrueba').style.display = 'block';
+            mostrarUsuarios(datosPrueba);
+        }
+        
+        function mostrarUsuarios(usuarios) {
+            const tabla = document.getElementById('tablaPrueba');
+            let html = '<table border="1" style="width: 100%; border-collapse: collapse;">';
+            html += '<tr><th>ID</th><th>Usuario</th><th>Nombre</th><th>Puntos</th><th>Racha</th></tr>';
+            
+            usuarios.forEach(usuario => {
+                html += `
+                    <tr>
+                        <td>${usuario.id}</td>
+                        <td>${usuario.nombre_usuario}</td>
+                        <td>${usuario.nombre_menor}</td>
+                        <td>${usuario.puntos || 0}</td>
+                        <td>${usuario.racha_dias || 0}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table>';
+            tabla.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

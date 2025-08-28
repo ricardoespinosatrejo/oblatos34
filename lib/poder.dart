@@ -120,7 +120,7 @@ class _PoderCooperacionScreenState extends State<PoderCooperacionScreen> with Ti
                     // Header de navegación reutilizable
                     HeaderNavigation(
                       onMenuTap: () {
-                        Navigator.pushReplacementNamed(context, '/menu');
+                        Navigator.pushNamed(context, '/menu');
                       },
                       title: 'BIENVENIDOS',
                       subtitle: 'EL CORAZÓN DE\nCAJA OBLATOS',

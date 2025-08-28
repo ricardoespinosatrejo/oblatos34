@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Usuarios PHP</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-left: 4px solid #007bff; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .success { border-left-color: #28a745; background: #d4edda; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug - Conexión a usuarios.php</h1>
+    
+    <div class="debug-section">
+        <h3>1️⃣ Probar Conexión PHP</h3>
+        <button onclick="probarConexion()">Probar Conexión PHP</button>
+        <div id="resultado-conexion"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>2️⃣ Ver Respuesta Completa</h3>
+        <button onclick="verRespuestaCompleta()">Ver Respuesta Completa</button>
+        <div id="respuesta-completa"></div>
+    </div>
+    
+    <div class="debug-section">
+        <h3>3️⃣ Probar con Datos Simulados</h3>
+        <button onclick="probarDatosSimulados()">Probar con Datos Simulados</button>
+        <div id="datos-simulados"></div>
+    </div>
+
+    <script>
+        async function probarConexion() {
+            const resultadoDiv = document.getElementById('resultado-conexion');
+            resultadoDiv.innerHTML = '<div class="result">🔄 Probando conexión...</div>';
+            
+            try {
+                const response = await fetch('https://zumuradigital.com/app-oblatos-login/usuarios.php');
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultadoDiv.innerHTML = `
+                        <div class="result success">
+                            ✅ Conexión exitosa!<br>
+                            Usuarios encontrados: ${data.total}<br>
+                            Primer usuario: ${data.usuarios[0]?.nombre_usuario || 'N/A'}
+                        </div>
+                    `;
+                } else {
+                    resultadoDiv.innerHTML = `
+                        <div class="result error">
+                            ❌ Error en la respuesta:<br>
+                            ${data.message}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultadoDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Error de conexión:<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        async function verRespuestaCompleta() {
+            const resultadoDiv = document.getElementById('respuesta-completa');
+            resultadoDiv.innerHTML = '<div class="result">🔄 Obteniendo respuesta completa...</div>';
+            
+            try {
+                const response = await fetch('https://zumuradigital.com/app-oblatos-login/usuarios.php');
+                const responseText = await response.text();
+                
+                resultadoDiv.innerHTML = `
+                    <div class="result">
+                        <strong>Respuesta completa:</strong><br>
+                        <pre style="background: #f1f1f1; padding: 10px; overflow-x: auto;">${responseText}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultadoDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        function probarDatosSimulados() {
+            const resultadoDiv = document.getElementById('datos-simulados');
+            const datosSimulados = {
+                success: true,
+                usuarios: [
+                    {
+                        id: 1,
+                        nombre_usuario: "usuario_prueba",
+                        puntos: 100,
+                        racha_dias: 5
+                    }
+                ],
+                total: 1
+            };
+            
+            resultadoDiv.innerHTML = `
+                <div class="result success">
+                    ✅ Datos simulados cargados correctamente<br>
+                    <pre style="background: #f1f1f1; padding: 10px;">${JSON.stringify(datosSimulados, null, 2)}</pre>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

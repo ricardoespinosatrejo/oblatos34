@@ -285,7 +285,7 @@ class _InicioPageState extends State<InicioPage> {
           
           // Guardar información del usuario
           final userManager = Provider.of<UserManager>(context, listen: false);
-          userManager.setUserInfo(_usuarioController.text.trim(), _emailController.text.trim());
+          userManager.setCurrentUser(responseData['usuario']);
           
           // Navegar al menú
           Navigator.pushReplacement(

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios Registrados - APP Caja Oblatos</title>
+    <link rel="stylesheet" href="usuarios_updated.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Usuarios Registrados</h1>
+            <p>Caja Oblatos - Base de Datos MySQL con Sistema de Puntos</p>
+        </div>
+        
+        <div class="content">
+            <button class="refresh-btn" onclick="cargarUsuarios()">
+                Actualizar Datos
+            </button>
+            
+            <div class="stats" id="stats">
+                <!-- Las estadísticas se cargarán aquí -->
+            </div>
+            
+            <div class="table-container">
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Cargando usuarios...</p>
+                </div>
+                
+                <table id="usuariosTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Nombre del Menor</th>
+                            <th>Rango de Edad</th>
+                            <th>Padre/Madre</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>Puntos</th>
+                            <th>Racha</th>
+                            <th>Última Sesión</th>
+                            <th>Fecha de Registro</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usuariosBody">
+                        <!-- Los usuarios se cargarán aquí -->
+                    </tbody>
+                </table>
+                
+                <div id="noData" class="no-data" style="display: none;">
+                    <h3>📝 No hay usuarios registrados</h3>
+                    <p>Los usuarios aparecerán aquí una vez que se registren.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cargar usuarios al abrir la página
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarUsuarios();
+        });
+
+        function cargarUsuarios() {
+            // Mostrar loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('usuariosTable').style.display = 'none';
+            document.getElementById('noData').style.display = 'none';
+            
+            // Hacer petición AJAX
+            fetch('https://zumuradigital.com/app-oblatos-login/usuarios.php')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    if (data.success && data.usuarios && data.usuarios.length > 0) {
+                        mostrarUsuarios(data.usuarios);
+                        mostrarEstadisticas(data.usuarios);
+                    } else {
+                        document.getElementById('noData').style.display = 'block';
+                        document.getElementById('stats').innerHTML = '<div class="stat-card"><div class="stat-number">0</div><div class="stat-label">Total de Usuarios</div></div>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('noData').style.display = 'block';
+                    console.error('Error:', error);
+                });
+        }
+
+        function mostrarUsuarios(usuarios) {
+            const tbody = document.getElementById('usuariosBody');
+            tbody.innerHTML = '';
+            
+            usuarios.forEach(usuario => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="user-id">#${usuario.id}</td>
+                    <td><strong>${usuario.nombre_usuario}</strong></td>
+                    <td>${usuario.nombre_menor}</td>
+                    <td><span class="rango-edad">${usuario.rango_edad}</span></td>
+                    <td>${usuario.nombre_padre_madre}</td>
+                    <td>${usuario.email}</td>
+                    <td>${usuario.telefono}</td>
+                    <td class="puntos">${formatearPuntos(usuario.puntos)}</td>
+                    <td class="racha">${formatearRacha(usuario.racha_dias)}</td>
+                    <td class="ultima-sesion">${formatearUltimaSesion(usuario.ultima_sesion)}</td>
+                    <td class="fecha">${formatearFecha(usuario.fecha_registro)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            document.getElementById('usuariosTable').style.display = 'table';
+        }
+
+        function mostrarEstadisticas(usuarios) {
+            const total = usuarios.length;
+            const rango9_12 = usuarios.filter(u => u.rango_edad === '9-12').length;
+            const rango13_15 = usuarios.filter(u => u.rango_edad === '13-15').length;
+            const rango15_17 = usuarios.filter(u => u.rango_edad === '15-17').length;
+            
+            // Estadísticas del sistema de puntos
+            const totalPuntos = usuarios.reduce((sum, u) => sum + (parseInt(u.puntos) || 0), 0);
+            const promedioPuntos = total > 0 ? Math.round(totalPuntos / total) : 0;
+            const usuariosConRacha = usuarios.filter(u => (parseInt(u.racha_dias) || 0) > 0).length;
+            const rachaMaxima = Math.max(...usuarios.map(u => parseInt(u.racha_dias) || 0));
+            
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${total}</div>
+                    <div class="stat-label">Total de Usuarios</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${totalPuntos}</div>
+                    <div class="stat-label">Total de Puntos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${promedioPuntos}</div>
+                    <div class="stat-label">Promedio de Puntos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${usuariosConRacha}</div>
+                    <div class="stat-label">Con Racha Activa</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${rachaMaxima}</div>
+                    <div class="stat-label">Racha Máxima</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${rango9_12 + rango13_15 + rango15_17}</div>
+                    <div class="stat-label">Usuarios Activos</div>
+                </div>
+            `;
+        }
+
+        function formatearPuntos(puntos) {
+            const puntosNum = parseInt(puntos) || 0;
+            if (puntosNum === 0) {
+                return '<span class="puntos-cero">0</span>';
+            } else if (puntosNum >= 100) {
+                return `<span class="puntos-alto">${puntosNum} 🏆</span>`;
+            } else if (puntosNum >= 50) {
+                return `<span class="puntos-medio">${puntosNum} ⭐</span>';
+            } else {
+                return `<span class="puntos-bajo">${puntosNum}</span>`;
+            }
+        }
+
+        function formatearRacha(racha) {
+            const rachaNum = parseInt(racha) || 0;
+            if (rachaNum === 0) {
+                return '<span class="racha-cero">0</span>';
+            } else if (rachaNum >= 30) {
+                return `<span class="racha-alta">${rachaNum} 🔥</span>`;
+            } else if (rachaNum >= 7) {
+                return `<span class="racha-media">${rachaNum} ⚡</span>`;
+            } else {
+                return `<span class="racha-baja">${rachaNum}</span>`;
+            }
+        }
+
+        function formatearUltimaSesion(ultimaSesion) {
+            if (!ultimaSesion) {
+                return '<span class="nunca">Nunca</span>';
+            }
+            
+            const fecha = new Date(ultimaSesion);
+            const hoy = new Date();
+            const diffTime = Math.abs(hoy - fecha);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 1) {
+                return '<span class="hoy">Ayer</span>';
+            } else if (diffDays === 0) {
+                return '<span class="hoy">Hoy</span>';
+            } else if (diffDays <= 7) {
+                return `<span class="reciente">Hace ${diffDays} días</span>`;
+            } else {
+                return `<span class="antiguo">${fecha.toLocaleDateString('es-ES')}</span>`;
+            }
+        }
+
+        function formatearFecha(fechaString) {
+            const fecha = new Date(fechaString);
+            return fecha.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>

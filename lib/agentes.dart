@@ -149,7 +149,7 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
                   // Header de navegación reutilizable
                   HeaderNavigation(
                     onMenuTap: () {
-                      Navigator.pushReplacementNamed(context, '/menu');
+                      Navigator.pushNamed(context, '/menu');
                     },
                     title: 'BIENVENIDOS',
                     subtitle: 'AGENTES DEL\nCAMBIO',

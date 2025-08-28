@@ -92,7 +92,7 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                   // Header de navegación reutilizable
                   HeaderNavigation(
                     onMenuTap: () {
-                      Navigator.pushReplacementNamed(context, '/menu');
+                      Navigator.pushNamed(context, '/menu');
                     },
                     title: 'BIENVENIDOS',
                     subtitle: 'CAJA OBLATOS',

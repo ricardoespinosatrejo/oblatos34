@@ -82,7 +82,7 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
                     // Header de navegación reutilizable
                     HeaderNavigation(
                       onMenuTap: () {
-                        Navigator.pushReplacementNamed(context, '/menu');
+                        Navigator.pushNamed(context, '/menu');
                       },
                       title: 'BIENVENIDOS',
                       subtitle: 'APRENDIENDO LA\nMANERA COOPERATIVA',
