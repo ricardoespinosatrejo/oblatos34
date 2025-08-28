@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'inicio.dart'; // Para acceder a ProfileImageManager
 import 'widgets/header_navigation.dart'; // Para el HeaderNavigation reutilizable
 import 'widgets/submenu_widget.dart';
@@ -15,6 +16,9 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
   bool _isSubmenuVisible = false;
   late AnimationController _submenuAnimationController;
   late Animation<Offset> _submenuSlideAnimation;
+  
+  // Audio player para el botón central
+  final AudioPlayer _audioPlayer = AudioPlayer();
   
   @override
   void initState() {
@@ -38,10 +42,11 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
   @override
   void dispose() {
     _submenuAnimationController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
-  void _toggleSubmenu() {
+  void _toggleSubmenu() async {
     if (_isSubmenuVisible) {
       // Si está visible, animar hacia abajo y luego ocultar
       _submenuAnimationController.reverse().then((_) {
@@ -57,6 +62,11 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
         _isSubmenuVisible = true;
       });
       _submenuAnimationController.forward();
+      
+      // Reproducir audio ding.mp3
+      try {
+        await _audioPlayer.play(AssetSource('audios/ding.mp3'));
+      } catch (_) {}
     }
   }
 

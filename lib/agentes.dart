@@ -183,8 +183,8 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
                         fontSize: 14,
                       ),
                                       onTap: (index) async {
-                  // Reproducir audio ding.mp3
-                  await _audioPlayer.play(AssetSource('audios/ding.mp3'));
+                  // Reproducir audio beep2.mp3
+                  await _audioPlayer.play(AssetSource('audios/beep2.mp3'));
                   
                   setState(() {
                     _selectedCategory = index;

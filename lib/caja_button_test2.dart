@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 void main() {
   runApp(MyApp());
@@ -17,7 +18,20 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class TestScreen extends StatelessWidget {
+class TestScreen extends StatefulWidget {
+  @override
+  _TestScreenState createState() => _TestScreenState();
+}
+
+class _TestScreenState extends State<TestScreen> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,8 +54,11 @@ class TestScreen extends StatelessWidget {
             
             // Botón Caja Exacto
             CajaButton(
-              onTap: () {
+              onTap: () async {
                 print('Botón Caja presionado');
+                try {
+                  await _audioPlayer.play(AssetSource('audios/ding.mp3'));
+                } catch (_) {}
               },
             ),
             
