@@ -814,7 +814,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
           // Nombre del padre/madre
           _buildInfoField(
             label: 'NOMBRE',
-            value: 'Ana Gabriela Chavez Del Rio',
+            value: _nombrePadreController.text.isNotEmpty ? _nombrePadreController.text : 'No especificado',
             controller: _nombrePadreController,
             isEditing: _isEditing,
           ),
@@ -823,7 +823,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
           // Teléfono
           _buildInfoField(
             label: 'TELÉFONO',
-            value: '+52 5574287982',
+            value: _telefonoController.text.isNotEmpty ? _telefonoController.text : 'No especificado',
             controller: _telefonoController,
             isEditing: _isEditing,
           ),

@@ -192,9 +192,27 @@ class _InicioPageState extends State<InicioPage> {
             ),
           );
           
-          // Guardar información del usuario
+          // Guardar información completa del usuario después del registro
           final userManager = Provider.of<UserManager>(context, listen: false);
-          userManager.setUserInfo(_usuarioController.text.trim(), _emailController.text.trim());
+          
+          // Si el registro devuelve información del usuario, usarla
+          if (responseData['usuario'] != null) {
+            userManager.setCurrentUser(responseData['usuario']);
+          } else {
+            // Si no, crear un usuario temporal con los datos del formulario
+            final Map<String, dynamic> tempUser = {
+              'id': responseData['user_id'] ?? 0,
+              'nombre_usuario': _usuarioController.text.trim(),
+              'nombre_menor': _nombreCompletoController.text.trim(),
+              'rango_edad': _selectedRangoEdad,
+              'nombre_padre_madre': _nombrePadreMadreController.text.trim(),
+              'email': _emailController.text.trim(),
+              'telefono': _telefonoController.text.trim(),
+              'puntos': 0, // Usuario nuevo empieza con 0 puntos
+              'profile_image': 1, // Imagen por defecto
+            };
+            userManager.setCurrentUser(tempUser);
+          }
           
           // Navegar al menú
           Navigator.pushReplacement(

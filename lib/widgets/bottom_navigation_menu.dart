@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class BottomNavigationMenu extends StatelessWidget {
   final VoidCallback? onCenterTap;
+  
   const BottomNavigationMenu({Key? key, this.onCenterTap}) : super(key: key);
 
   @override
@@ -13,14 +14,6 @@ class BottomNavigationMenu extends StatelessWidget {
           image: AssetImage('assets/images/menu/menu-barra.png'),
           fit: BoxFit.cover,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.18),
-            blurRadius: 16,
-            spreadRadius: 2,
-            offset: Offset(0, -2),
-          ),
-        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
