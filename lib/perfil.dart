@@ -70,6 +70,34 @@ class _PerfilScreenState extends State<PerfilScreen> {
       _telefonoController.text = user['telefono'] ?? '';
       _nombrePadreController.text = user['nombre_padre_madre'] ?? '';
       _selectedProfileImage = user['profile_image'] ?? 1;
+      
+      // Actualizar sesión diaria automáticamente al cargar el perfil
+      _updateSesionDiaria(userManager);
+    }
+  }
+
+  void _updateSesionDiaria(UserManager userManager) async {
+    try {
+      final user = userManager.currentUser;
+      if (user == null || user['id'] == null) return;
+
+      // Llamar al backend para actualizar sesión diaria
+      final response = await http.post(
+        Uri.parse('https://zumuradigital.com/app-oblatos-login/update_points.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': user['id'],
+          'action': 'sesion_diaria'
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        // Actualizar UserManager con los nuevos datos
+        userManager.updateSesionDiaria();
+        print('✅ Sesión diaria actualizada automáticamente');
+      }
+    } catch (e) {
+      print('❌ Error actualizando sesión diaria: $e');
     }
   }
 
@@ -289,7 +317,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                                      child: _buildPointsButton(),
                                    ),
                                    
-                                   SizedBox(height: 15),
+                                   SizedBox(height: 8), // Reducido de 15 a 8
                                    // Información adicional de puntos
                                    _buildPuntosInfo(),
  
@@ -308,10 +336,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       // Botones de acción
                       _buildActionButtons(),
                       
-                      SizedBox(height: 20),
-                      // Botón de prueba temporal para el sistema de puntos
-                      _buildTestButton(),
-
                       SizedBox(height: 30),
                     ],
                   ),
@@ -552,9 +576,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
         return Container(
           padding: EdgeInsets.all(15),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Color(0xFF9C27B0).withOpacity(0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -760,189 +782,13 @@ class _PerfilScreenState extends State<PerfilScreen> {
     );
   }
 
-  Widget _buildTestButton() {
-    return Consumer<UserManager>(
-      builder: (context, userManager, child) {
-        return Container(
-          width: double.infinity,
-          child: Column(
-            children: [
-              Text(
-                'BOTÓN DE PRUEBA - SISTEMA DE PUNTOS',
-                style: TextStyle(
-                  fontFamily: 'Gotham Rounded',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF9C27B0),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _testSesionDiaria(userManager),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF4CAF50),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: Text(
-                        'PROBAR SESIÓN DIARIA',
-                        style: TextStyle(
-                          fontFamily: 'Gotham Rounded',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () => _testCompletarActividad(userManager, 'caja'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF2196F3),
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: Text(
-                        'PROBAR ACTIVIDAD',
-                        style: TextStyle(
-                          fontFamily: 'Gotham Rounded',
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
-  void _testSesionDiaria(UserManager userManager) async {
-    try {
-      final user = userManager.currentUser;
-      if (user == null || user['id'] == null) {
-        _showTestResult('Error: Usuario no encontrado o sin ID');
-        return;
-      }
 
-      final response = await http.post(
-        Uri.parse('https://zumuradigital.com/app-oblatos-login/update_points.php'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'user_id': user['id'],
-          'action': 'sesion_diaria'
-        }),
-      );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _showTestResult('✅ Éxito: ${data['message']}\n\nDatos: ${jsonEncode(data['data'])}');
-        
-        // Actualizar UserManager con los nuevos datos
-        userManager.updateSesionDiaria();
-      } else {
-        _showTestResult('❌ Error HTTP: ${response.statusCode}\n\nRespuesta: ${response.body}');
-      }
-    } catch (e) {
-      _showTestResult('❌ Error de conexión: $e');
-    }
-  }
 
-  void _testCompletarActividad(UserManager userManager, String actividad) async {
-    try {
-      final user = userManager.currentUser;
-      if (user == null || user['id'] == null) {
-        _showTestResult('Error: Usuario no encontrado o sin ID');
-        return;
-      }
 
-      final response = await http.post(
-        Uri.parse('https://zumuradigital.com/app-oblatos-login/update_points.php'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'user_id': user['id'],
-          'action': 'completar_actividad',
-          'actividad': actividad
-        }),
-      );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        _showTestResult('✅ Éxito: ${data['message']}\n\nDatos: ${jsonEncode(data['data'])}');
-        
-        // Actualizar UserManager con los nuevos datos
-        userManager.completarActividad(actividad);
-      } else {
-        _showTestResult('❌ Error HTTP: ${response.statusCode}\n\nRespuesta: ${response.body}');
-      }
-    } catch (e) {
-      _showTestResult('❌ Error de conexión: $e');
-    }
-  }
 
-  void _showTestResult(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            'RESULTADO DE PRUEBA',
-            style: TextStyle(
-              fontFamily: 'Gotham Rounded',
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF9C27B0),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          content: SingleChildScrollView(
-            child: Text(
-              message,
-              style: TextStyle(
-                fontFamily: 'Gotham Rounded',
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'CERRAR',
-                style: TextStyle(
-                  fontFamily: 'Gotham Rounded',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF9C27B0),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Widget _buildParentInfoSection() {
     return Container(

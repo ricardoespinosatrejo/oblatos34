@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Caja Oblatos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container { 
+            background: white; 
+            border-radius: 20px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        .logo { 
+            width: 80px; 
+            height: 80px; 
+            margin: 0 auto 20px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: white;
+            font-weight: bold;
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 10px; 
+            font-size: 28px;
+        }
+        .subtitle { 
+            color: #666; 
+            margin-bottom: 30px; 
+            font-size: 16px;
+        }
+        .user-info { 
+            background: #f8f9fa; 
+            border-radius: 15px; 
+            padding: 25px; 
+            margin-bottom: 25px;
+            border-left: 5px solid #667eea;
+        }
+        .info-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 15px 0; 
+            border-bottom: 1px solid #eee;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { 
+            color: #666; 
+            font-weight: 500; 
+            font-size: 14px;
+        }
+        .info-value { 
+            color: #333; 
+            font-weight: 600; 
+            font-size: 16px;
+        }
+        .points-display { 
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4); 
+            color: white; 
+            padding: 20px; 
+            border-radius: 15px; 
+            margin-bottom: 25px;
+        }
+        .points-number { 
+            font-size: 48px; 
+            font-weight: bold; 
+            margin-bottom: 5px;
+        }
+        .points-label { 
+            font-size: 14px; 
+            opacity: 0.9;
+        }
+        .session-info { 
+            background: #e3f2fd; 
+            border-radius: 15px; 
+            padding: 20px; 
+            margin-bottom: 25px;
+            border-left: 5px solid #2196f3;
+        }
+        .session-date { 
+            font-size: 18px; 
+            font-weight: 600; 
+            color: #1976d2; 
+            margin-bottom: 5px;
+        }
+        .session-label { 
+            font-size: 14px; 
+            color: #666;
+        }
+        .btn-actualizar { 
+            background: linear-gradient(45deg, #667eea, #764ba2); 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn-actualizar:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .loading { 
+            color: #666; 
+            font-style: italic; 
+            padding: 20px;
+        }
+        .error { 
+            color: #dc3545; 
+            background: #f8d7da; 
+            padding: 20px; 
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .streak-info {
+            background: linear-gradient(45deg, #ff9800, #f57c00);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+        .streak-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .streak-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">CO</div>
+        <h1>Mi Perfil</h1>
+        <p class="subtitle">Caja Oblatos - Sistema de Puntos</p>
+        
+        <div id="user-content">
+            <div class="loading">🔄 Cargando tu información...</div>
+        </div>
+        
+        <button onclick="cargarMiPerfil()" class="btn-actualizar">🔄 Actualizar Datos</button>
+    </div>
+
+    <script>
+        // Cargar datos al iniciar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Página cargada, iniciando carga de perfil...');
+            cargarMiPerfil();
+        });
+
+        async function cargarMiPerfil() {
+            console.log('📡 Cargando perfil del usuario...');
+            const userContent = document.getElementById('user-content');
+            
+            try {
+                // Mostrar loading
+                userContent.innerHTML = '<div class="loading">🔄 Cargando tu información...</div>';
+                
+                console.log('🌐 Haciendo fetch a usuarios.php...');
+                const response = await fetch('usuarios.php');
+                console.log('✅ Respuesta recibida:', response);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📊 Datos recibidos:', data);
+                
+                if (data.success && data.usuarios && data.usuarios.length > 0) {
+                    // Por ahora mostramos el primer usuario (mimichi23)
+                    // En el futuro esto se puede personalizar por ID de usuario
+                    const usuario = data.usuarios[0]; // mimichi23
+                    console.log('👤 Usuario encontrado:', usuario.nombre_usuario);
+                    mostrarMiPerfil(usuario);
+                } else {
+                    throw new Error(data.message || 'No se encontraron usuarios');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error cargando perfil:', error);
+                userContent.innerHTML = `
+                    <div class="error">
+                        ❌ Error cargando tu perfil: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function mostrarMiPerfil(usuario) {
+            console.log('📋 Mostrando perfil del usuario...');
+            const userContent = document.getElementById('user-content');
+            
+            const html = `
+                <div class="user-info">
+                    <div class="info-row">
+                        <span class="info-label">👤 Usuario:</span>
+                        <span class="info-value">${usuario.nombre_usuario}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">📝 Nombre:</span>
+                        <span class="info-value">${usuario.nombre_menor || 'N/A'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">📧 Email:</span>
+                        <span class="info-value">${usuario.email || 'N/A'}</span>
+                    </div>
+                </div>
+                
+                <div class="points-display">
+                    <div class="points-number">${usuario.puntos || 0}</div>
+                    <div class="points-label">⭐ PUNTOS TOTALES</div>
+                </div>
+                
+                <div class="streak-info">
+                    <div class="streak-number">${usuario.racha_dias || 0}</div>
+                    <div class="streak-label">🔥 DÍAS CONSECUTIVOS</div>
+                </div>
+                
+                <div class="session-info">
+                    <div class="session-date">${formatearUltimaSesion(usuario.ultima_sesion)}</div>
+                    <div class="session-label">🕐 ÚLTIMA SESIÓN</div>
+                </div>
+            `;
+            
+            userContent.innerHTML = html;
+            console.log('✅ Perfil mostrado correctamente');
+        }
+
+        function formatearUltimaSesion(fecha) {
+            if (!fecha) return 'Nunca';
+            
+            const fechaSesion = new Date(fecha);
+            const hoy = new Date();
+            const diferencia = hoy - fechaSesion;
+            const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+            
+            if (dias === 0) return 'Hoy';
+            if (dias === 1) return 'Ayer';
+            if (dias < 7) return `Hace ${dias} días`;
+            if (dias < 30) return `Hace ${dias} días`;
+            return 'Hace más de un mes';
+        }
+    </script>
+</body>
+</html>

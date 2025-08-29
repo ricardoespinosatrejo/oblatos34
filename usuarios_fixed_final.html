@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios Registrados - Caja Oblatos</title>
+    <link rel="stylesheet" href="usuarios_updated.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Usuarios Registrados</h1>
+            <p>Caja Oblatos - Base de Datos MySQL con Sistema de Puntos</p>
+            <button onclick="actualizarDatos()" class="btn-actualizar">Actualizar Datos</button>
+        </header>
+
+        <div class="stats" id="estadisticas">
+            <!-- Las estadísticas se cargarán aquí -->
+        </div>
+
+        <div class="table-container">
+            <table id="tabla-usuarios">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Usuario</th>
+                        <th>Nombre del Menor</th>
+                        <th>Rango de Edad</th>
+                        <th>Padre/Madre</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th>Puntos</th>
+                        <th>Racha</th>
+                        <th>Última Sesión</th>
+                        <th>Fecha de Registro</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpo-tabla">
+                    <tr>
+                        <td colspan="11" class="loading">Cargando usuarios...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Cargar datos al iniciar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Página cargada, iniciando carga de datos...');
+            cargarUsuarios();
+        });
+
+        async function cargarUsuarios() {
+            console.log('Iniciando carga de usuarios...');
+            const tbody = document.getElementById('cuerpo-tabla');
+            const statsDiv = document.getElementById('estadisticas');
+            
+            try {
+                // Mostrar loading
+                tbody.innerHTML = '<tr><td colspan="11" class="loading">Cargando usuarios...</td></tr>';
+                
+                console.log('Haciendo fetch a usuarios.php...');
+                const response = await fetch('usuarios.php');
+                console.log('Respuesta recibida:', response);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Datos recibidos:', data);
+                
+                if (data.success && data.usuarios) {
+                    console.log('Procesando usuarios:', data.usuarios.length);
+                    mostrarUsuarios(data.usuarios);
+                    mostrarEstadisticas(data.usuarios);
+                } else {
+                    throw new Error(data.message || 'Error en la respuesta del servidor');
+                }
+                
+            } catch (error) {
+                console.error('Error cargando usuarios:', error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="11" class="error">
+                            ❌ Error cargando usuarios: ${error.message}
+                        </td>
+                    </tr>
+                `;
+                statsDiv.innerHTML = '<div class="error">Error cargando estadísticas</div>';
+            }
+        }
+
+        function mostrarUsuarios(usuarios) {
+            console.log('Mostrando usuarios en tabla...');
+            const tbody = document.getElementById('cuerpo-tabla');
+            
+            if (!usuarios || usuarios.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="11" class="no-data">
+                            <h3>📝 No hay usuarios registrados</h3>
+                            <p>Los usuarios aparecerán aquí una vez que se registren.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            const html = usuarios.map(usuario => `
+                <tr>
+                    <td>${usuario.id}</td>
+                    <td>${usuario.nombre_usuario}</td>
+                    <td>${usuario.nombre_menor || 'N/A'}</td>
+                    <td>${usuario.rango_edad || 'N/A'}</td>
+                    <td>${usuario.nombre_padre_madre || 'N/A'}</td>
+                    <td>${usuario.email || 'N/A'}</td>
+                    <td>${usuario.telefono || 'N/A'}</td>
+                    <td class="${formatearPuntos(usuario.puntos)}">${usuario.puntos || 0}</td>
+                    <td class="${formatearRacha(usuario.racha_dias)}">${usuario.racha_dias || 0}</td>
+                    <td class="${formatearUltimaSesion(usuario.ultima_sesion)}">${formatearUltimaSesion(usuario.ultima_sesion)}</td>
+                    <td>${formatearFecha(usuario.fecha_registro)}</td>
+                </tr>
+            `).join('');
+            
+            tbody.innerHTML = html;
+            console.log('Tabla actualizada con', usuarios.length, 'usuarios');
+        }
+
+        function mostrarEstadisticas(usuarios) {
+            console.log('Calculando estadísticas...');
+            const statsDiv = document.getElementById('estadisticas');
+            
+            if (!usuarios || usuarios.length === 0) {
+                statsDiv.innerHTML = '<div class="error">No hay datos para mostrar estadísticas</div>';
+                return;
+            }
+            
+            const totalUsuarios = usuarios.length;
+            const totalPuntos = usuarios.reduce((sum, u) => sum + (u.puntos || 0), 0);
+            const promedioPuntos = totalUsuarios > 0 ? Math.round(totalPuntos / totalUsuarios) : 0;
+            const usuariosConRacha = usuarios.filter(u => (u.racha_dias || 0) > 0).length;
+            const rachaMaxima = Math.max(...usuarios.map(u => u.racha_dias || 0));
+            const usuariosActivos = usuarios.filter(u => u.ultima_sesion).length;
+            
+            const html = `
+                <div class="stat-card">
+                    <h3>👥 Total Usuarios</h3>
+                    <p>${totalUsuarios}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>⭐ Total Puntos</h3>
+                    <p>${totalPuntos}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>📊 Promedio Puntos</h3>
+                    <p>${promedioPuntos}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>🔥 Usuarios con Racha</h3>
+                    <p>${usuariosConRacha}</p>
+                </div>
+                <div class="stat-card">
+                    <h3>🏆 Racha Máxima</h3>
+                    <p>${rachaMaxima} días</p>
+                </div>
+                <div class="stat-card">
+                    <h3>✅ Usuarios Activos</h3>
+                    <p>${usuariosActivos}</p>
+                </div>
+            `;
+            
+            statsDiv.innerHTML = html;
+            console.log('Estadísticas calculadas y mostradas');
+        }
+
+        function formatearPuntos(puntos) {
+            if (!puntos || puntos === 0) return 'puntos-cero';
+            if (puntos < 10) return 'puntos-bajo';
+            if (puntos < 50) return 'puntos-medio';
+            return 'puntos-alto';
+        }
+
+        function formatearRacha(racha) {
+            if (!racha || racha === 0) return 'racha-cero';
+            if (racha < 3) return 'racha-baja';
+            if (racha < 7) return 'racha-media';
+            return 'racha-alta';
+        }
+
+        function formatearUltimaSesion(fecha) {
+            if (!fecha) return 'Nunca';
+            
+            const fechaSesion = new Date(fecha);
+            const hoy = new Date();
+            const diferencia = hoy - fechaSesion;
+            const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+            
+            if (dias === 0) return 'Hoy';
+            if (dias === 1) return 'Ayer';
+            if (dias < 7) return `${dias} días`;
+            if (dias < 30) return `${dias} días`;
+            return 'Antiguo';
+        }
+
+        function formatearFecha(fecha) {
+            if (!fecha) return 'N/A';
+            return new Date(fecha).toLocaleDateString('es-ES');
+        }
+
+        function actualizarDatos() {
+            console.log('Actualizando datos...');
+            cargarUsuarios();
+        }
+    </script>
+</body>
+</html>

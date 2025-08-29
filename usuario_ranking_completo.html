@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Líder + Ranking - Caja Oblatos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .left-panel {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            height: fit-content;
+        }
+        .right-panel {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .logo { 
+            width: 80px; 
+            height: 80px; 
+            margin: 0 auto 20px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: white;
+            font-weight: bold;
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 10px; 
+            font-size: 28px;
+            text-align: center;
+        }
+        .subtitle { 
+            color: #666; 
+            margin-bottom: 30px; 
+            font-size: 16px;
+            text-align: center;
+        }
+        .leader-badge {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #333;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+        }
+        .user-info { 
+            background: #f8f9fa; 
+            border-radius: 15px; 
+            padding: 25px; 
+            margin-bottom: 25px;
+            border-left: 5px solid #667eea;
+        }
+        .info-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 15px 0; 
+            border-bottom: 1px solid #eee;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { 
+            color: #666; 
+            font-weight: 500; 
+            font-size: 14px;
+        }
+        .info-value { 
+            color: #333; 
+            font-weight: 600; 
+            font-size: 16px;
+        }
+        .points-display { 
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4); 
+            color: white; 
+            padding: 20px; 
+            border-radius: 15px; 
+            margin-bottom: 25px;
+        }
+        .points-number { 
+            font-size: 48px; 
+            font-weight: bold; 
+            margin-bottom: 5px;
+        }
+        .points-label { 
+            font-size: 14px; 
+            opacity: 0.9;
+        }
+        .session-info { 
+            background: #e3f2fd; 
+            border-radius: 15px; 
+            padding: 20px; 
+            margin-bottom: 25px;
+            border-left: 5px solid #2196f3;
+        }
+        .session-date { 
+            font-size: 18px; 
+            font-weight: 600; 
+            color: #1976d2; 
+            margin-bottom: 5px;
+        }
+        .session-label { 
+            font-size: 14px; 
+            color: #666;
+        }
+        .streak-info {
+            background: linear-gradient(45deg, #ff9800, #f57c00);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+        .streak-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .streak-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .btn-actualizar { 
+            background: linear-gradient(45deg, #667eea, #764ba2); 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: 600;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        .btn-actualizar:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .loading { 
+            color: #666; 
+            font-style: italic; 
+            padding: 20px;
+            text-align: center;
+        }
+        .error { 
+            color: #dc3545; 
+            background: #f8d7da; 
+            padding: 20px; 
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        /* Ranking Styles */
+        .ranking-header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .ranking-title {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .ranking-subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        .ranking-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .ranking-item {
+            display: grid;
+            grid-template-columns: auto 1fr auto auto;
+            gap: 15px;
+            align-items: center;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+        .ranking-item:hover {
+            background: #f8f9fa;
+            transform: translateX(5px);
+        }
+        .ranking-position {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .position-1 { background: linear-gradient(45deg, #ffd700, #ffed4e); color: #333; }
+        .position-2 { background: linear-gradient(45deg, #c0c0c0, #e5e5e5); color: #333; }
+        .position-3 { background: linear-gradient(45deg, #cd7f32, #daa520); color: white; }
+        .ranking-username {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+        .ranking-points {
+            font-weight: bold;
+            color: #28a745;
+            font-size: 18px;
+            text-align: center;
+        }
+        .ranking-session {
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+        }
+        .no-session {
+            color: #999;
+            font-style: italic;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+        @media (max-width: 768px) {
+            .ranking-item {
+                grid-template-columns: auto 1fr auto;
+                gap: 10px;
+            }
+            .ranking-session {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- PANEL IZQUIERDO - FICHA DEL LÍDER -->
+        <div class="left-panel">
+            <div class="logo">CO</div>
+            <h1>🏆 Líder del Ranking</h1>
+            <p class="subtitle">Caja Oblatos - Sistema de Puntos</p>
+            
+            <div id="user-content">
+                <div class="loading">🔄 Cargando información del líder...</div>
+            </div>
+            
+            <button onclick="cargarTodo()" class="btn-actualizar">🔄 Actualizar Datos</button>
+        </div>
+        
+        <!-- PANEL DERECHO - RANKING DE USUARIOS -->
+        <div class="right-panel">
+            <div class="ranking-header">
+                <h2 class="ranking-title">🏆 Ranking de Usuarios</h2>
+                <p class="ranking-subtitle">Ordenados por puntos - Top 50</p>
+            </div>
+            
+            <div id="ranking-content">
+                <div class="loading">🔄 Cargando ranking...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cargar datos al iniciar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Página cargada, iniciando carga de datos...');
+            cargarTodo();
+        });
+
+        async function cargarTodo() {
+            console.log('📡 Cargando todos los datos...');
+            await Promise.all([
+                cargarLider(),
+                cargarRanking()
+            ]);
+        }
+
+        async function cargarLider() {
+            console.log('👑 Cargando información del líder...');
+            const userContent = document.getElementById('user-content');
+            
+            try {
+                userContent.innerHTML = '<div class="loading">🔄 Cargando información del líder...</div>';
+                
+                const response = await fetch('usuarios.php');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                if (data.success && data.usuarios && data.usuarios.length > 0) {
+                    // Encontrar al usuario con más puntos (líder)
+                    const usuariosOrdenados = data.usuarios.sort((a, b) => (b.puntos || 0) - (a.puntos || 0));
+                    const lider = usuariosOrdenados[0];
+                    console.log('👑 Líder encontrado:', lider.nombre_usuario, 'con', lider.puntos, 'puntos');
+                    mostrarLider(lider);
+                } else {
+                    throw new Error(data.message || 'No se encontraron usuarios');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error cargando líder:', error);
+                userContent.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function cargarRanking() {
+            console.log('🏆 Cargando ranking de usuarios...');
+            const rankingContent = document.getElementById('ranking-content');
+            
+            try {
+                rankingContent.innerHTML = '<div class="loading">🔄 Cargando ranking...</div>';
+                
+                const response = await fetch('usuarios.php');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                if (data.success && data.usuarios && data.usuarios.length > 0) {
+                    mostrarRanking(data.usuarios);
+                } else {
+                    throw new Error(data.message || 'No se encontraron usuarios');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error cargando ranking:', error);
+                rankingContent.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function mostrarLider(lider) {
+            console.log('👑 Mostrando información del líder...');
+            const userContent = document.getElementById('user-content');
+            
+            const html = `
+                <div class="leader-badge">
+                    🥇 LÍDER ACTUAL DEL RANKING
+                </div>
+                
+                <div class="user-info">
+                    <div class="info-row">
+                        <span class="info-label">👤 Usuario:</span>
+                        <span class="info-value">${lider.nombre_usuario}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">📝 Nombre:</span>
+                        <span class="info-value">${lider.nombre_menor || 'N/A'}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">📧 Email:</span>
+                        <span class="info-value">${lider.email || 'N/A'}</span>
+                    </div>
+                </div>
+                
+                <div class="points-display">
+                    <div class="points-number">${lider.puntos || 0}</div>
+                    <div class="points-label">⭐ PUNTOS TOTALES</div>
+                </div>
+                
+                <div class="streak-info">
+                    <div class="streak-number">${lider.racha_dias || 0}</div>
+                    <div class="streak-label">🔥 DÍAS CONSECUTIVOS</div>
+                </div>
+                
+                <div class="session-info">
+                    <div class="session-date">${formatearUltimaSesion(lider.ultima_sesion)}</div>
+                    <div class="session-label">🕐 ÚLTIMA SESIÓN</div>
+                </div>
+            `;
+            
+            userContent.innerHTML = html;
+            console.log('✅ Líder mostrado correctamente');
+        }
+
+        function mostrarRanking(usuarios) {
+            console.log('🏆 Mostrando ranking de usuarios...');
+            const rankingContent = document.getElementById('ranking-content');
+            
+            // Ordenar usuarios por puntos (descendente)
+            const usuariosOrdenados = usuarios
+                .sort((a, b) => (b.puntos || 0) - (a.puntos || 0))
+                .slice(0, 50); // Top 50
+            
+            if (usuariosOrdenados.length === 0) {
+                rankingContent.innerHTML = '<div class="loading">📝 No hay usuarios para mostrar</div>';
+                return;
+            }
+            
+            const html = `
+                <div class="ranking-list">
+                    ${usuariosOrdenados.map((usuario, index) => {
+                        const position = index + 1;
+                        let positionClass = '';
+                        if (position === 1) positionClass = 'position-1';
+                        else if (position === 2) positionClass = 'position-2';
+                        else if (position === 3) positionClass = 'position-3';
+                        
+                        return `
+                            <div class="ranking-item">
+                                <div class="ranking-position ${positionClass}">${position}</div>
+                                <div class="ranking-username">${usuario.nombre_usuario}</div>
+                                <div class="ranking-points">${usuario.puntos || 0}</div>
+                                <div class="ranking-session ${!usuario.ultima_sesion ? 'no-session' : ''}">
+                                    ${formatearUltimaSesion(usuario.ultima_sesion)}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            
+            rankingContent.innerHTML = html;
+            console.log('✅ Ranking mostrado correctamente con', usuariosOrdenados.length, 'usuarios');
+        }
+
+        function formatearUltimaSesion(fecha) {
+            if (!fecha) return 'Nunca';
+            
+            const fechaSesion = new Date(fecha);
+            const hoy = new Date();
+            const diferencia = hoy - fechaSesion;
+            const dias = Math.floor(diferencia / (1000 * 60 * 60 * 24));
+            
+            if (dias === 0) return 'Hoy';
+            if (dias === 1) return 'Ayer';
+            if (dias < 7) return `${dias}d`;
+            if (dias < 30) return `${dias}d`;
+            return `${dias}d+`;
+        }
+    </script>
+</body>
+</html>

@@ -235,6 +235,32 @@ class _InicioPageState extends State<InicioPage> {
     }
   }
 
+  // Actualizar sesión diaria automáticamente
+  Future<void> _actualizarSesionDiaria(UserManager userManager) async {
+    try {
+      final user = userManager.currentUser;
+      if (user == null || user['id'] == null) return;
+
+      // Llamar al backend para actualizar sesión diaria
+      final response = await http.post(
+        Uri.parse('https://zumuradigital.com/app-oblatos-login/update_points.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': user['id'],
+          'action': 'sesion_diaria'
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        // Actualizar UserManager con los nuevos datos
+        userManager.updateSesionDiaria();
+        print('✅ Sesión diaria actualizada automáticamente al login');
+      }
+    } catch (e) {
+      print('❌ Error actualizando sesión diaria al login: $e');
+    }
+  }
+
   // Hacer login
   Future<void> _hacerLogin() async {
     if (!_formKey.currentState!.validate()) return;
@@ -286,6 +312,9 @@ class _InicioPageState extends State<InicioPage> {
           // Guardar información del usuario
           final userManager = Provider.of<UserManager>(context, listen: false);
           userManager.setCurrentUser(responseData['usuario']);
+          
+          // NUEVO: Actualizar sesión diaria automáticamente al hacer login
+          await _actualizarSesionDiaria(userManager);
           
           // Navegar al menú
           Navigator.pushReplacement(
