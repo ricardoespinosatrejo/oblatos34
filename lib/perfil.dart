@@ -19,6 +19,12 @@ class _PerfilScreenState extends State<PerfilScreen> {
   final TextEditingController _telefonoController = TextEditingController();
   final TextEditingController _nombrePadreController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  
+  // FocusNodes para controlar el teclado
+  final FocusNode _nombreFocusNode = FocusNode();
+  final FocusNode _emailFocusNode = FocusNode();
+  final FocusNode _telefonoFocusNode = FocusNode();
+  final FocusNode _nombrePadreFocusNode = FocusNode();
 
   bool _isEditing = false;
   int _selectedProfileImage = 1; // 1, 2, o 3
@@ -46,6 +52,26 @@ class _PerfilScreenState extends State<PerfilScreen> {
         });
       }
     });
+    
+    // Escuchar cambios en el teclado
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        // Scroll automático cuando aparece el teclado
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients && MediaQuery.of(context).viewInsets.bottom > 0) {
+            Future.delayed(Duration(milliseconds: 300), () {
+              if (_scrollController.hasClients) {
+                _scrollController.animateTo(
+                  _scrollController.position.maxScrollExtent,
+                  duration: Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
+              }
+            });
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -57,6 +83,13 @@ class _PerfilScreenState extends State<PerfilScreen> {
     _telefonoController.dispose();
     _nombrePadreController.dispose();
     _scrollController.dispose();
+    
+    // Dispose de los FocusNodes
+    _nombreFocusNode.dispose();
+    _emailFocusNode.dispose();
+    _telefonoFocusNode.dispose();
+    _nombrePadreFocusNode.dispose();
+    
     super.dispose();
   }
 
@@ -241,6 +274,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFF0A0E21),
+      resizeToAvoidBottomInset: true,
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -266,7 +300,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
               Expanded(
                 child: SingleChildScrollView(
                   controller: _scrollController,
-                  padding: EdgeInsets.symmetric(horizontal: 20),
+                  padding: EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                  ),
                   child: Column(
                     children: [
                       SizedBox(height: 20),

@@ -5,7 +5,7 @@ import 'caja_correcto.dart' as caja;
 import 'poder.dart' as poder;
 import 'aprendiendo.dart' as aprendiendo;
 import 'agentes.dart' as agentes;
-import 'eventos.dart' as eventos;
+import 'eventos.dart';
 import 'videoblog.dart' as videoblog;
 
 class MainContainer extends StatefulWidget {
@@ -70,7 +70,7 @@ class _MainContainerState extends State<MainContainer> {
       case '/agentes-cambio':
         return agentes.AgentesCambioScreen(); // Usar el AgentesScreen completo
       case '/eventos':
-        return eventos.EventosScreen(); // Usar el EventosScreen completo
+        return EventosScreen(); // Usar el EventosScreen completo con submenu
       case '/video-blog':
         return videoblog.VideoBlogScreen(); // Usar el VideoBlogScreen completo
       default:

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'inicio.dart';
 import 'bienvenida.dart';
 import 'menu.dart';
@@ -9,12 +10,21 @@ import 'caja_correcto.dart' as caja;
 import 'poder.dart' as poder;
 import 'aprendiendo.dart' as aprendiendo;
 import 'agentes.dart' as agentes;
-import 'eventos.dart' as eventos;
+import 'eventos.dart';
 import 'videoblog.dart' as videoblog;
 import 'perfil.dart';
 import 'user_manager.dart';
+// import 'services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicializar datos de localización para español
+  await initializeDateFormatting('es_ES', null);
+  
+  // Inicializar servicio de notificaciones
+  // await NotificationService.initialize();
+  
   runApp(MyApp());
 }
 
@@ -39,7 +49,7 @@ class MyApp extends StatelessWidget {
           '/poder-cooperacion': (context) => poder.PoderCooperacionScreen(),
           '/aprendiendo-cooperativa': (context) => aprendiendo.AprendiendoCooperativaScreen(),
           '/agentes-cambio': (context) => agentes.AgentesCambioScreen(),
-          '/eventos': (context) => eventos.EventosScreen(),
+          '/eventos': (context) => EventosPage(),
           '/video-blog': (context) => videoblog.VideoBlogScreen(),
           '/perfil': (context) => PerfilScreen(),
         },

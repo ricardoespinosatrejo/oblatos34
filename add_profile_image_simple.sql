@@ -6,3 +6,9 @@ ALTER TABLE usuarios ADD COLUMN profile_image INT DEFAULT 1 COMMENT 'Número de 
 
 -- Verificar que la columna se agregó correctamente
 DESCRIBE usuarios;
+
+
+
+
+
+

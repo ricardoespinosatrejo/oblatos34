@@ -108,3 +108,9 @@ ALTER TABLE usuarios ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP O
 - Se incluye manejo de errores y mensajes de usuario
 - El diseño es responsive y sigue las especificaciones de Figma
 - Se mantiene consistencia con el resto de la aplicación
+
+
+
+
+
+
