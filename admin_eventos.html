@@ -311,7 +311,6 @@
         <div class="content">
             <div class="actions">
                 <button class="btn btn-primary" onclick="openAddModal()">➕ Agregar Evento</button>
-                <button class="btn btn-success" onclick="syncGoogleCalendar()">🔄 Sincronizar Google Calendar</button>
                 <button class="btn btn-secondary" onclick="refreshEvents()">🔄 Actualizar Lista</button>
                 <input type="text" class="search-box" placeholder="🔍 Buscar eventos..." onkeyup="filterEvents(this.value)">
             </div>
@@ -552,23 +551,7 @@
             }
         });
 
-        // Sincronizar con Google Calendar
-        async function syncGoogleCalendar() {
-            try {
-                showMessage('Sincronizando con Google Calendar...', 'success');
-                const response = await fetch('sync_google_calendar.php');
-                const data = await response.json();
-                
-                if (data.success) {
-                    showMessage('Sincronización completada: ' + data.message, 'success');
-                    loadEvents();
-                } else {
-                    showMessage('Error en sincronización: ' + data.error, 'error');
-                }
-            } catch (error) {
-                showMessage('Error de conexión: ' + error.message, 'error');
-            }
-        }
+
 
         // Actualizar lista
         function refreshEvents() {

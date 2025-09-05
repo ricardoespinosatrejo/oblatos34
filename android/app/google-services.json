@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "550643069430",
+    "project_id": "oblatos-232c5",
+    "storage_bucket": "oblatos-232c5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:550643069430:android:6248f78c9b0bc17ac4d7d7",
+        "android_client_info": {
+          "package_name": "com.example.oblatos34"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6kw2wQCy63pEPMAkUm4k9kTbZpNapfi8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

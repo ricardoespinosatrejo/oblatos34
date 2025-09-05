@@ -109,7 +109,7 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
             // Submenu (se muestra cuando se activa)
             if (_isSubmenuVisible) _buildSubmenu(),
             
-            // Menú inferior rojo
+            // Menú inferior rojo (debe estar al final para estar por encima del submenú)
             Positioned(
               bottom: 0,
               left: 0,

@@ -113,3 +113,7 @@ INSERT IGNORE INTO categorias_eventos (nombre, color, descripcion) VALUES
 ('Eventos Sociales', '#9C27B0', 'Eventos de networking y sociales'),
 ('Asambleas', '#F44336', 'Asambleas generales y votaciones'),
 ('General', '#757575', 'Eventos generales');
+
+
+
+

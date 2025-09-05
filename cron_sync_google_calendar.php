@@ -170,3 +170,7 @@ try {
 
 writeLog("Sincronización automática finalizada\n");
 ?>
+
+
+
+

@@ -18,3 +18,7 @@ INSERT INTO eventos (titulo, descripcion, fecha_inicio, fecha_fin, ubicacion, es
 ('Taller de Cooperativas', 'Taller educativo sobre cooperativas y economía solidaria', '2024-09-09 14:00:00', '2024-09-09 17:00:00', 'Centro Comunitario', FALSE),
 ('Evento de Networking', 'Networking con otras organizaciones cooperativas', '2024-09-16 18:00:00', '2024-09-16 22:00:00', 'Hotel Central', FALSE),
 ('Asamblea General', 'Asamblea general de miembros de Caja Oblatos', '2024-09-23 15:00:00', '2024-09-23 18:00:00', 'Auditorio Principal', FALSE);
+
+
+
+

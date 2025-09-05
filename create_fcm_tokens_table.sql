@@ -45,3 +45,7 @@ CREATE TABLE IF NOT EXISTS configuraciones_notificacion (
     
     INDEX idx_user_id (user_id)
 );
+
+
+
+

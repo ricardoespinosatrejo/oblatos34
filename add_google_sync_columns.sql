@@ -37,3 +37,7 @@ ALTER TABLE eventos
 ADD COLUMN enviar_notificacion BOOLEAN DEFAULT TRUE,
 ADD COLUMN notificacion_enviada BOOLEAN DEFAULT FALSE,
 ADD COLUMN recordatorio_horas INT DEFAULT 24;
+
+
+
+

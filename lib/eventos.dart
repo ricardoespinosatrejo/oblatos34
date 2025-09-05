@@ -13,7 +13,7 @@ class EventosPage extends StatefulWidget {
   _EventosPageState createState() => _EventosPageState();
 }
 
-class _EventosPageState extends State<EventosPage> {
+class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin {
   List<Evento> _eventos = [];
   List<Evento> _eventosFiltrados = [];
   bool _isLoading = true;
@@ -27,10 +27,27 @@ class _EventosPageState extends State<EventosPage> {
   // Controladores
   TextEditingController _searchController = TextEditingController();
   FocusNode _searchFocusNode = FocusNode();
+  
+  // Submenu state
+  bool _isSubmenuVisible = false;
+  late AnimationController _submenuAnimationController;
+  late Animation<Offset> _submenuSlideAnimation;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
+    _submenuAnimationController = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _submenuSlideAnimation = Tween<Offset>(
+      begin: Offset(0, 1),
+      end: Offset(0, 0),
+    ).animate(CurvedAnimation(
+      parent: _submenuAnimationController,
+      curve: Curves.easeOutCubic,
+    ));
     _loadEventos();
   }
 
@@ -38,7 +55,29 @@ class _EventosPageState extends State<EventosPage> {
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _submenuAnimationController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
+  }
+
+  void _toggleSubmenu() async {
+    if (_isSubmenuVisible) {
+      _submenuAnimationController.reverse().then((_) {
+        if (mounted) {
+          setState(() {
+            _isSubmenuVisible = false;
+          });
+        }
+      });
+    } else {
+      setState(() {
+        _isSubmenuVisible = true;
+      });
+      _submenuAnimationController.forward();
+      try {
+        await _audioPlayer.play(AssetSource('audios/ding.mp3'));
+      } catch (_) {}
+    }
   }
 
   Future<void> _loadEventos() async {
@@ -133,8 +172,18 @@ class _EventosPageState extends State<EventosPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF1E1E1E),
-      body: SafeArea(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/images/background.jpg'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Stack(
+          children: [
+            SafeArea(
         child: Column(
           children: [
             // Header con título y botón de regreso
@@ -212,19 +261,19 @@ class _EventosPageState extends State<EventosPage> {
                   final categoria = _categorias[index];
                   final isSelected = categoria == _categoriaSeleccionada;
                   
-                  return Container(
-                    margin: EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(
-                        categoria,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.white.withOpacity(0.8),
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                      ),
-                      selected: isSelected,
-                      selectedColor: _getCategoriaColor(categoria),
-                      backgroundColor: Colors.white.withOpacity(0.1),
+                                          return Container(
+                          margin: EdgeInsets.only(right: 8),
+                          child: FilterChip(
+                            label: Text(
+                              categoria,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                            selected: isSelected,
+                            selectedColor: _getCategoriaColor(categoria),
+                            backgroundColor: _getCategoriaColor(categoria).withOpacity(0.5),
                       onSelected: (selected) {
                         setState(() {
                           _categoriaSeleccionada = categoria;
@@ -293,6 +342,32 @@ class _EventosPageState extends State<EventosPage> {
             ),
           ],
         ),
+            ),
+            
+            // Submenu (se muestra cuando se activa)
+            if (_isSubmenuVisible) _buildEventosSubmenu(),
+            
+            // Menú inferior reutilizable
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.18),
+                      blurRadius: 16,
+                      spreadRadius: 2,
+                      offset: Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: BottomNavigationMenu(onCenterTap: _toggleSubmenu),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -303,7 +378,7 @@ class _EventosPageState extends State<EventosPage> {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Color(0xFF5C34A7).withOpacity(0.4),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: categoriaColor.withOpacity(0.3),
@@ -435,6 +510,98 @@ class _EventosPageState extends State<EventosPage> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEventosSubmenu() {
+    return Positioned(
+      bottom: -10,
+      left: 0,
+      right: 0,
+      child: SlideTransition(
+        position: _submenuSlideAnimation,
+        child: Container(
+          height: 375,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/submenu/plasta-menu.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: 40,
+                left: 0,
+                right: 0,
+                child: Text(
+                  'Herramientas de Eventos',
+                  style: TextStyle(
+                    fontFamily: 'GothamRounded',
+                    fontSize: 14,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Positioned(
+                top: 68,
+                left: 0,
+                child: Image.asset('assets/images/submenu/moneda2.png', width: 30, height: 130),
+              ),
+              Positioned(
+                top: 58,
+                right: 10,
+                child: Image.asset('assets/images/submenu/moneda1.png', width: 46, height: 47),
+              ),
+              Positioned(
+                top: 68,
+                left: 0,
+                right: 0,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () { 
+                            print('Navegar a calendario'); 
+                          },
+                          child: Image.asset('assets/images/submenu/btn-juego.png', height: 156),
+                        ),
+                        SizedBox(width: 9),
+                        GestureDetector(
+                          onTap: () { 
+                            print('Navegar a recordatorios'); 
+                          },
+                          child: Image.asset('assets/images/submenu/btn-calculadora.png', height: 150),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 156,
+                          child: Text('Calendario', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                        ),
+                        SizedBox(width: 9),
+                        SizedBox(
+                          width: 150,
+                          child: Text('Recordatorios', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -677,13 +844,13 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
                             label: Text(
                               categoria,
                               style: TextStyle(
-                                color: isSelected ? Colors.white : Colors.white.withOpacity(0.8),
+                                color: Colors.white,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
                             selected: isSelected,
                             selectedColor: _getCategoriaColor(categoria),
-                            backgroundColor: Colors.white.withOpacity(0.1),
+                            backgroundColor: _getCategoriaColor(categoria).withOpacity(0.5),
                             onSelected: (selected) {
                               setState(() {
                                 _categoriaSeleccionada = categoria;
@@ -788,7 +955,7 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Color(0xFF5C34A7).withOpacity(0.4),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: categoriaColor.withOpacity(0.3),

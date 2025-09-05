@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
-import 'widgets/header_navigation.dart';
-import 'widgets/bottom_navigation_menu.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'widgets/header_navigation.dart';
 
 class VideoBlogScreen extends StatefulWidget {
   @override
@@ -17,15 +16,15 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
   ChewieController? _chewieController;
   ScrollController _textScrollController = ScrollController();
   
+  // Variables para animación de fade-in secuencial
+  List<bool> _buttonVisible = List.generate(5, (index) => false);
+  int _currentButtonIndex = 0;
+  
   // Submenu state
   bool _isSubmenuVisible = false;
   late AnimationController _submenuAnimationController;
   late Animation<Offset> _submenuSlideAnimation;
-  final AudioPlayer _beepPlayer = AudioPlayer();
-  
-  // Variables para animación de fade-in secuencial
-  List<bool> _buttonVisible = List.generate(5, (index) => false);
-  int _currentButtonIndex = 0;
+  final AudioPlayer _audioPlayer = AudioPlayer();
   
   @override
   void initState() {
@@ -53,21 +52,27 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
     _chewieController?.dispose();
     _textScrollController.dispose();
     _submenuAnimationController.dispose();
-    _beepPlayer.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
-  
+
   void _toggleSubmenu() async {
     if (_isSubmenuVisible) {
       _submenuAnimationController.reverse().then((_) {
         if (mounted) {
-          setState(() { _isSubmenuVisible = false; });
+          setState(() {
+            _isSubmenuVisible = false;
+          });
         }
       });
     } else {
-      setState(() { _isSubmenuVisible = true; });
+      setState(() {
+        _isSubmenuVisible = true;
+      });
       _submenuAnimationController.forward();
-      try { await _beepPlayer.play(AssetSource('audios/ding.mp3')); } catch (_) {}
+      try {
+        await _audioPlayer.play(AssetSource('audios/ding.mp3'));
+      } catch (_) {}
     }
   }
   
@@ -133,7 +138,7 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
                   // Header de navegación reutilizable
                   HeaderNavigation(
                     onMenuTap: () {
-                      Navigator.pushNamed(context, '/menu');
+                      Navigator.pushReplacementNamed(context, '/menu');
                     },
                     title: 'BIENVENIDOS',
                     subtitle: 'VIDEO\nBLOG',
@@ -148,25 +153,31 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
             ),
             
             // Submenu (se muestra cuando se activa)
-            if (_isSubmenuVisible) _buildSubmenu(),
-
-            // Menú inferior rojo reutilizable
+            if (_isSubmenuVisible) _buildVideoBlogSubmenu(),
+            
+            // Menú inferior rojo (debe estar al final para estar por encima del submenú)
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
               child: Container(
+                height: 98,
                 decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
-                      blurRadius: 16,
-                      spreadRadius: 2,
-                      offset: Offset(0, -2),
-                    ),
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/menu/menu-barra.png'),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildNavItem('m-icono1.png', 'Caja\nOblatos', '/caja'),
+                    _buildNavItem('m-icono2.png', 'Agentes\nCambio', '/agentes-cambio'),
+                    _buildCenterNavItem('m-icono3.png'),
+                    _buildNavItem('m-icono4.png', 'Eventos', '/eventos'),
+                    _buildNavItem('m-icono5.png', 'Video\nBlog', '/video-blog'),
                   ],
                 ),
-                child: BottomNavigationMenu(onCenterTap: _toggleSubmenu),
               ),
             ),
           ],
@@ -213,35 +224,38 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
   Widget _buildCenterNavItem(String iconPath) {
     return Transform.translate(
       offset: Offset(-6, -14),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  Color(0xFFFF1744),
-                  Color(0xFFE91E63),
-                ],
+      child: GestureDetector(
+        onTap: _toggleSubmenu,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Color(0xFFFF1744),
+                    Color(0xFFE91E63),
+                  ],
+                ),
+                border: Border.all(color: Colors.black, width: 1),
               ),
-              border: Border.all(color: Colors.black, width: 1),
-            ),
-            child: Center(
-              child: Image.asset(
-                'assets/images/menu/$iconPath',
-                width: 24,
-                height: 24,
-                color: Colors.white,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.lightbulb, color: Colors.white, size: 24);
-                },
+              child: Center(
+                child: Image.asset(
+                  'assets/images/menu/$iconPath',
+                  width: 24,
+                  height: 24,
+                  color: Colors.white,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.lightbulb, color: Colors.white, size: 24);
+                  },
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -274,94 +288,6 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
             child: _buildVideoFicha(i),
           ),
       ],
-    );
-  }
-
-  Widget _buildSubmenu() {
-    return Positioned(
-      bottom: -10,
-      left: 0,
-      right: 0,
-      child: SlideTransition(
-        position: _submenuSlideAnimation,
-        child: Container(
-          height: 375,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/submenu/plasta-menu.png'),
-              fit: BoxFit.cover,
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                top: 40,
-                left: 0,
-                right: 0,
-                child: Text(
-                  'Herramientas Financieras',
-                  style: TextStyle(
-                    fontFamily: 'GothamRounded',
-                    fontSize: 14,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              Positioned(
-                top: 68,
-                left: 0,
-                child: Image.asset('assets/images/submenu/moneda2.png', width: 30, height: 130),
-              ),
-              Positioned(
-                top: 58,
-                right: 10,
-                child: Image.asset('assets/images/submenu/moneda1.png', width: 46, height: 47),
-              ),
-              Positioned(
-                top: 68,
-                left: 0,
-                right: 0,
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        GestureDetector(
-                          onTap: () { print('Navegar al juego'); },
-                          child: Image.asset('assets/images/submenu/btn-juego.png', height: 156),
-                        ),
-                        SizedBox(width: 9),
-                        GestureDetector(
-                          onTap: () { print('Navegar a la calculadora'); },
-                          child: Image.asset('assets/images/submenu/btn-calculadora.png', height: 150),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 156,
-                          child: Text('Juego', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
-                        ),
-                        SizedBox(width: 9),
-                        SizedBox(
-                          width: 150,
-                          child: Text('Calculadora', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -804,6 +730,98 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
         ),
       );
     }
+  }
+
+  Widget _buildVideoBlogSubmenu() {
+    return Positioned(
+      bottom: -10,
+      left: 0,
+      right: 0,
+      child: SlideTransition(
+        position: _submenuSlideAnimation,
+        child: Container(
+          height: 375,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/submenu/plasta-menu.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: 40,
+                left: 0,
+                right: 0,
+                child: Text(
+                  'Herramientas de Video Blog',
+                  style: TextStyle(
+                    fontFamily: 'GothamRounded',
+                    fontSize: 14,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Positioned(
+                top: 68,
+                left: 0,
+                child: Image.asset('assets/images/submenu/moneda2.png', width: 30, height: 130),
+              ),
+              Positioned(
+                top: 58,
+                right: 10,
+                child: Image.asset('assets/images/submenu/moneda1.png', width: 46, height: 47),
+              ),
+              Positioned(
+                top: 68,
+                left: 0,
+                right: 0,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () { 
+                            Navigator.pushNamed(context, '/juego');
+                          },
+                          child: Image.asset('assets/images/submenu/btn-juego.png', height: 156),
+                        ),
+                        SizedBox(width: 9),
+                        GestureDetector(
+                          onTap: () { 
+                            Navigator.pushNamed(context, '/calculadora');
+                          },
+                          child: Image.asset('assets/images/submenu/btn-calculadora.png', height: 150),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 156,
+                          child: Text('Juego', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                        ),
+                        SizedBox(width: 9),
+                        SizedBox(
+                          width: 150,
+                          child: Text('Calculadora', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

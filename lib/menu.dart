@@ -222,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             // Submenu (se muestra cuando se activa)
             if (_isSubmenuVisible) _buildSubmenu(),
             
-            // Bottom Navigation
+            // Bottom Navigation (debe estar al final para estar por encima del submenú)
             Positioned(
               bottom: 0,
               left: 0,
@@ -1216,8 +1216,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       children: [
                         GestureDetector(
                           onTap: () {
-                            // TODO: Navegar al juego
-                            print('Navegar al juego');
+                            Navigator.pushNamed(context, '/juego');
                           },
                           child: Image.asset(
                             'assets/images/submenu/btn-juego.png',
@@ -1227,8 +1226,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         SizedBox(width: 9), // Gap de 9px entre botones
                         GestureDetector(
                           onTap: () {
-                            // TODO: Navegar a la calculadora
-                            print('Navegar a la calculadora');
+                            Navigator.pushNamed(context, '/calculadora');
                           },
                           child: Image.asset(
                             'assets/images/submenu/btn-calculadora.png',

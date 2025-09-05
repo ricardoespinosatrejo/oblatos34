@@ -23,3 +23,7 @@ UPDATE eventos SET
     fecha_inicio = '2025-09-23 15:00:00',
     fecha_fin = '2025-09-23 18:00:00'
 WHERE titulo = 'Asamblea General';
+
+
+
+

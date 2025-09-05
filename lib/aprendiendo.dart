@@ -97,10 +97,10 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
               ),
             ),
             
-            // Submenu (se muestra cuando se activa) - debe ir ANTES del menú rojo para quedar debajo
+            // Submenu (se muestra cuando se activa)
             if (_isSubmenuVisible) _buildSubmenu(),
             
-            // Menú inferior rojo
+            // Menú inferior rojo (debe estar al final para estar por encima del submenú)
             Positioned(
               bottom: 0,
               left: 0,

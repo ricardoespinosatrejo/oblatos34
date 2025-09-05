@@ -57,10 +57,6 @@ dependencies:
   # Date/Time utilities
   intl: ^0.19.0
   
-  # Push Notifications (comentado temporalmente)
-  # firebase_messaging: ^14.7.10
-  # firebase_core: ^2.24.2
-  # flutter_local_notifications: ^16.3.0
   
   # Background Tasks (comentado temporalmente)
   # workmanager: ^0.5.2
@@ -103,6 +99,8 @@ flutter:
     - assets/images/agentes/
     - assets/images/submenu/
     - assets/images/perfil/
+    - assets/images/game/
+    - assets/images/game/sounds/
     - assets/audios/
     - assets/videos/
     - assets/fonts/

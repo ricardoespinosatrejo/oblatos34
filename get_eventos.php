@@ -48,12 +48,13 @@ try {
         return [
             [
                 'id' => '1',
-                'titulo' => 'Reunión de Caja Oblatos',
-                'descripcion' => 'Reunión mensual para discutir proyectos y campañas',
-                'fecha_inicio' => date('Y-m-d H:i:s', strtotime('+2 days')),
-                'fecha_fin' => date('Y-m-d H:i:s', strtotime('+2 days +2 hours')),
+                'titulo' => 'demostracion de la app',
+                'descripcion' => 'vas a ver una demostracion de la aplicacion',
+                'fecha_inicio' => date('Y-m-d H:i:s', strtotime('today 15:02')),
+                'fecha_fin' => date('Y-m-d H:i:s', strtotime('today 17:02')),
                 'ubicacion' => 'Sede Principal Caja Oblatos',
-                'es_todo_el_dia' => false
+                'es_todo_el_dia' => false,
+                'categoria' => 'Asambleas'
             ],
             [
                 'id' => '2',
@@ -62,7 +63,8 @@ try {
                 'fecha_inicio' => date('Y-m-d', strtotime('+5 days')),
                 'fecha_fin' => date('Y-m-d', strtotime('+5 days')),
                 'ubicacion' => 'Plaza Central',
-                'es_todo_el_dia' => true
+                'es_todo_el_dia' => true,
+                'categoria' => 'Campañas'
             ],
             [
                 'id' => '3',
@@ -71,7 +73,8 @@ try {
                 'fecha_inicio' => date('Y-m-d H:i:s', strtotime('+1 week')),
                 'fecha_fin' => date('Y-m-d H:i:s', strtotime('+1 week +3 hours')),
                 'ubicacion' => 'Centro Comunitario',
-                'es_todo_el_dia' => false
+                'es_todo_el_dia' => false,
+                'categoria' => 'Talleres'
             ],
             [
                 'id' => '4',
@@ -80,13 +83,34 @@ try {
                 'fecha_inicio' => date('Y-m-d H:i:s', strtotime('+2 weeks')),
                 'fecha_fin' => date('Y-m-d H:i:s', strtotime('+2 weeks +4 hours')),
                 'ubicacion' => 'Hotel Central',
-                'es_todo_el_dia' => false
+                'es_todo_el_dia' => false,
+                'categoria' => 'Eventos Sociales'
+            ],
+            [
+                'id' => '5',
+                'titulo' => 'Reunión Ejecutiva',
+                'descripcion' => 'Reunión mensual del comité ejecutivo',
+                'fecha_inicio' => date('Y-m-d H:i:s', strtotime('+3 days')),
+                'fecha_fin' => date('Y-m-d H:i:s', strtotime('+3 days +1 hour')),
+                'ubicacion' => 'Oficina Principal',
+                'es_todo_el_dia' => false,
+                'categoria' => 'Reuniones'
+            ],
+            [
+                'id' => '6',
+                'titulo' => 'Asamblea General',
+                'descripcion' => 'Asamblea general anual de socios',
+                'fecha_inicio' => date('Y-m-d H:i:s', strtotime('+1 month')),
+                'fecha_fin' => date('Y-m-d H:i:s', strtotime('+1 month +4 hours')),
+                'ubicacion' => 'Auditorio Principal',
+                'es_todo_el_dia' => false,
+                'categoria' => 'Asambleas'
             ]
         ];
     }
     
-    // Usar eventos desde Google Calendar
-    $eventos = getEventosFromGoogleCalendar($apiKey, $calendarId);
+    // Usar eventos de ejemplo por defecto (más confiable para pruebas)
+    $eventos = getEventosEjemplo();
     
     // Formatear respuesta
     $response = [
