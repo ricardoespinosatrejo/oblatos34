@@ -538,8 +538,7 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                       children: [
                         GestureDetector(
                           onTap: () {
-                            // TODO: Navegar al juego
-                            print('Navegar al juego');
+                            Navigator.pushNamed(context, '/juego');
                           },
                           child: Image.asset(
                             'assets/images/submenu/btn-juego.png',
@@ -549,8 +548,7 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                         SizedBox(width: 9),
                         GestureDetector(
                           onTap: () {
-                            // TODO: Navegar a la calculadora
-                            print('Navegar a la calculadora');
+                            Navigator.pushNamed(context, '/calculadora');
                           },
                           child: Image.asset(
                             'assets/images/submenu/btn-calculadora.png',
@@ -565,33 +563,39 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Etiqueta "Juego"
-                        SizedBox(
-                          width: 156,
-                          child: Text(
-                            'Juego',
-                            style: TextStyle(
-                              fontFamily: 'GothamRounded',
-                              fontSize: 12,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w600,
+                        // Etiqueta "Juego" - Movida 20px a la derecha
+                        Transform.translate(
+                          offset: Offset(20, 0), // Mover 20px a la derecha
+                          child: SizedBox(
+                            width: 156,
+                            child: Text(
+                              'Juego',
+                              style: TextStyle(
+                                fontFamily: 'GothamRounded',
+                                fontSize: 12,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                         SizedBox(width: 9),
-                        // Etiqueta "Calculadora"
-                        SizedBox(
-                          width: 150,
-                          child: Text(
-                            'Calculadora',
-                            style: TextStyle(
-                              fontFamily: 'GothamRounded',
-                              fontSize: 12,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w600,
+                        // Etiqueta "Calculadora" - Movida 18px a la izquierda
+                        Transform.translate(
+                          offset: Offset(-18, 0), // Mover 18px a la izquierda
+                          child: SizedBox(
+                            width: 150,
+                            child: Text(
+                              'Calculadora',
+                              style: TextStyle(
+                                fontFamily: 'GothamRounded',
+                                fontSize: 12,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],

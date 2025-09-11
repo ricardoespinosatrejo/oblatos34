@@ -617,8 +617,7 @@ class _PoderCooperacionScreenState extends State<PoderCooperacionScreen> with Ti
                       children: [
                         GestureDetector(
                           onTap: () {
-                            // TODO: Navegar al juego
-                            print('Navegar al juego');
+                            Navigator.pushNamed(context, '/juego');
                           },
                           child: Image.asset(
                             'assets/images/submenu/btn-juego.png',
@@ -628,8 +627,7 @@ class _PoderCooperacionScreenState extends State<PoderCooperacionScreen> with Ti
                         SizedBox(width: 9),
                         GestureDetector(
                           onTap: () {
-                            // TODO: Navegar a la calculadora
-                            print('Navegar a la calculadora');
+                            Navigator.pushNamed(context, '/calculadora');
                           },
                           child: Image.asset(
                             'assets/images/submenu/btn-calculadora.png',

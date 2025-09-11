@@ -101,6 +101,7 @@ flutter:
     - assets/images/perfil/
     - assets/images/game/
     - assets/images/game/sounds/
+    - assets/images/snippets/
     - assets/audios/
     - assets/videos/
     - assets/fonts/

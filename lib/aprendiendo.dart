@@ -419,31 +419,37 @@ class _AprendiendoCooperativaScreenState extends State<AprendiendoCooperativaScr
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SizedBox(
-                          width: 156,
-                          child: Text(
-                            'Juego',
-                            style: TextStyle(
-                              fontFamily: 'GothamRounded',
-                              fontSize: 12,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w600,
+                        Transform.translate(
+                          offset: Offset(20, 0), // Mover 20px a la derecha
+                          child: SizedBox(
+                            width: 156,
+                            child: Text(
+                              'Juego',
+                              style: TextStyle(
+                                fontFamily: 'GothamRounded',
+                                fontSize: 12,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                         SizedBox(width: 9),
-                        SizedBox(
-                          width: 150,
-                          child: Text(
-                            'Calculadora',
-                            style: TextStyle(
-                              fontFamily: 'GothamRounded',
-                              fontSize: 12,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w600,
+                        Transform.translate(
+                          offset: Offset(-18, 0), // Mover 18px a la izquierda
+                          child: SizedBox(
+                            width: 150,
+                            child: Text(
+                              'Calculadora',
+                              style: TextStyle(
+                                fontFamily: 'GothamRounded',
+                                fontSize: 12,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],

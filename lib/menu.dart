@@ -1241,33 +1241,39 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Etiqueta "Juego"
-                        SizedBox(
-                          width: 156, // Mismo ancho que btn-juego
-                          child: Text(
-                            'Juego',
-                            style: TextStyle(
-                              fontFamily: 'GothamRounded',
-                              fontSize: 12,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w600,
+                        // Etiqueta "Juego" - Movida 10px a la derecha
+                        Transform.translate(
+                          offset: Offset(20, 0), // Mover 20px a la derecha (10px + 10px más)
+                          child: SizedBox(
+                            width: 156, // Mismo ancho que btn-juego
+                            child: Text(
+                              'Juego',
+                              style: TextStyle(
+                                fontFamily: 'GothamRounded',
+                                fontSize: 12,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                         SizedBox(width: 9), // Gap de 9px entre etiquetas
-                        // Etiqueta "Calculadora"
-                        SizedBox(
-                          width: 150, // Mismo ancho que btn-calculadora
-                          child: Text(
-                            'Calculadora',
-                            style: TextStyle(
-                              fontFamily: 'GothamRounded',
-                              fontSize: 12,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w600,
+                        // Etiqueta "Calculadora" - Movida 15px a la izquierda
+                        Transform.translate(
+                          offset: Offset(-18, 0), // Mover 18px a la izquierda (15px + 3px más)
+                          child: SizedBox(
+                            width: 150, // Mismo ancho que btn-calculadora
+                            child: Text(
+                              'Calculadora',
+                              style: TextStyle(
+                                fontFamily: 'GothamRounded',
+                                fontSize: 12,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                       ],

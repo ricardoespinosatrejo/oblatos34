@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'inicio.dart';
 import 'bienvenida.dart';
-import 'menu.dart';
+import 'main_container.dart';
 import 'caja_correcto.dart' as caja;
 import 'poder.dart' as poder;
 import 'aprendiendo.dart' as aprendiendo;
@@ -14,6 +14,7 @@ import 'perfil.dart';
 import 'juego.dart';
 import 'calculadora.dart';
 import 'user_manager.dart';
+import 'widgets/global_snippet_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,10 +39,15 @@ class MyApp extends StatelessWidget {
           scaffoldBackgroundColor: Color(0xFF0A0E21),
         ),
         home: BienvenidaPage(),
+        builder: (context, child) {
+          return GlobalSnippetWrapper(
+            child: child!,
+          );
+        },
         routes: {
           '/home': (context) => InicioPage(),
           // Rutas directas a cada pantalla para evitar menú duplicado
-          '/menu': (context) => HomeScreen(),
+          '/menu': (context) => MainContainer(initialRoute: '/menu'),
           '/caja': (context) => caja.CajaScreen(),
           '/poder-cooperacion': (context) => poder.PoderCooperacionScreen(),
           '/aprendiendo-cooperativa': (context) => aprendiendo.AprendiendoCooperativaScreen(),
@@ -57,7 +63,7 @@ class MyApp extends StatelessWidget {
           if (settings.name == '/menu') {
             return PageRouteBuilder(
               settings: settings,
-              pageBuilder: (context, animation, secondaryAnimation) => HomeScreen(),
+              pageBuilder: (context, animation, secondaryAnimation) => MainContainer(initialRoute: '/menu'),
               transitionsBuilder: (context, animation, secondaryAnimation, child) {
                 const begin = Offset(1.0, 0.0); // Comienza desde la derecha
                 const end = Offset.zero; // Termina en el centro

@@ -305,12 +305,12 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         GestureDetector(
-                          onTap: () { print('Navegar al juego'); },
+                          onTap: () { Navigator.pushNamed(context, '/juego'); },
                           child: Image.asset('assets/images/submenu/btn-juego.png', height: 156),
                         ),
                         SizedBox(width: 9),
                         GestureDetector(
-                          onTap: () { print('Navegar a la calculadora'); },
+                          onTap: () { Navigator.pushNamed(context, '/calculadora'); },
                           child: Image.asset('assets/images/submenu/btn-calculadora.png', height: 150),
                         ),
                       ],
@@ -319,14 +319,20 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SizedBox(
-                          width: 156,
-                          child: Text('Juego', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                        Transform.translate(
+                          offset: Offset(20, 0), // Mover 20px a la derecha
+                          child: SizedBox(
+                            width: 156,
+                            child: Text('Juego', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                          ),
                         ),
                         SizedBox(width: 9),
-                        SizedBox(
-                          width: 150,
-                          child: Text('Calculadora', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                        Transform.translate(
+                          offset: Offset(-18, 0), // Mover 18px a la izquierda
+                          child: SizedBox(
+                            width: 150,
+                            child: Text('Calculadora', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                          ),
                         ),
                       ],
                     ),

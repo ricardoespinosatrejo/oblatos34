@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Administración de Snippets - Oblatos34</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            border-left: 5px solid #E91E63;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            color: #E91E63;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .stat-card p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .section {
+            margin: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+        }
+        
+        .section h2 {
+            color: #E91E63;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 2px solid #E91E63;
+            padding-bottom: 10px;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background: #E91E63;
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+        
+        tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .badge-success {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .badge-warning {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .badge-info {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+            font-size: 1.2em;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px;
+            border-left: 5px solid #c62828;
+        }
+        
+        .refresh-btn {
+            background: #E91E63;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 20px;
+            transition: background 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: #C2185B;
+        }
+        
+        .back-btn {
+            background: #666;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin: 20px;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: #555;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+            
+            .section {
+                margin: 20px;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Administración de Snippets</h1>
+            <p>Estadísticas y análisis de fichas informativas</p>
+        </div>
+        
+        <button class="refresh-btn" onclick="loadSnippetStats()">🔄 Actualizar Datos</button>
+        <a href="admin_panel.html" class="back-btn">← Volver al Panel</a>
+        
+        <div id="loading" class="loading">
+            <p>🔄 Cargando estadísticas de snippets...</p>
+        </div>
+        
+        <div id="error" class="error" style="display: none;">
+            <p>❌ Error al cargar los datos. Por favor, intenta nuevamente.</p>
+        </div>
+        
+        <div id="content" style="display: none;">
+            <!-- Estadísticas generales -->
+            <div class="stats-grid" id="statsGrid">
+                <!-- Se llenará dinámicamente -->
+            </div>
+            
+            <!-- Top usuarios -->
+            <div class="section">
+                <h2>🏆 Top Usuarios por Snippets Vistos</h2>
+                <div class="table-container">
+                    <table id="topUsersTable">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Nombre</th>
+                                <th>Snippets Vistos</th>
+                                <th>Puntos por Snippets</th>
+                                <th>Último Snippet</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Se llenará dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Top snippets -->
+            <div class="section">
+                <h2>📈 Snippets Más Populares</h2>
+                <div class="table-container">
+                    <table id="topSnippetsTable">
+                        <thead>
+                            <tr>
+                                <th>Snippet</th>
+                                <th>Veces Visto</th>
+                                <th>Popularidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Se llenará dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Estadísticas por día -->
+            <div class="section">
+                <h2>📅 Actividad de los Últimos 7 Días</h2>
+                <div class="table-container">
+                    <table id="dailyStatsTable">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Snippets Vistos</th>
+                                <th>Usuarios Únicos</th>
+                                <th>Promedio por Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Se llenará dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cargar estadísticas al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSnippetStats();
+        });
+        
+        async function loadSnippetStats() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const content = document.getElementById('content');
+            
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            content.style.display = 'none';
+            
+            try {
+                const response = await fetch('get_snippet_stats.php');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayStats(data.stats);
+                    loading.style.display = 'none';
+                    content.style.display = 'block';
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                loading.style.display = 'none';
+                error.style.display = 'block';
+            }
+        }
+        
+        function displayStats(stats) {
+            // Mostrar estadísticas generales
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <h3>${stats.total_snippets_hoy}</h3>
+                    <p>Snippets Vistos Hoy</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${stats.total_snippets}</h3>
+                    <p>Total de Snippets</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${stats.total_puntos_snippets}</h3>
+                    <p>Puntos Otorgados</p>
+                </div>
+                <div class="stat-card">
+                    <h3>${stats.usuarios_activos_hoy}</h3>
+                    <p>Usuarios Activos Hoy</p>
+                </div>
+            `;
+            
+            // Mostrar top usuarios
+            const topUsersTable = document.getElementById('topUsersTable').getElementsByTagName('tbody')[0];
+            topUsersTable.innerHTML = '';
+            stats.top_usuarios.forEach(user => {
+                const row = topUsersTable.insertRow();
+                row.innerHTML = `
+                    <td>${user.nombre_usuario}</td>
+                    <td>${user.nombre_menor}</td>
+                    <td><span class="badge badge-success">${user.snippets_vistos}</span></td>
+                    <td><span class="badge badge-info">${user.puntos_snippets}</span></td>
+                    <td>${formatDate(user.ultimo_snippet)}</td>
+                `;
+            });
+            
+            // Mostrar top snippets
+            const topSnippetsTable = document.getElementById('topSnippetsTable').getElementsByTagName('tbody')[0];
+            topSnippetsTable.innerHTML = '';
+            stats.top_snippets.forEach(snippet => {
+                const row = topSnippetsTable.insertRow();
+                const popularity = snippet.veces_visto > 10 ? 'badge-success' : snippet.veces_visto > 5 ? 'badge-warning' : 'badge-info';
+                row.innerHTML = `
+                    <td>${snippet.snippet_id}</td>
+                    <td><span class="badge ${popularity}">${snippet.veces_visto}</span></td>
+                    <td>${getPopularityText(snippet.veces_visto)}</td>
+                `;
+            });
+            
+            // Mostrar estadísticas diarias
+            const dailyStatsTable = document.getElementById('dailyStatsTable').getElementsByTagName('tbody')[0];
+            dailyStatsTable.innerHTML = '';
+            stats.estadisticas_7_dias.forEach(day => {
+                const row = dailyStatsTable.insertRow();
+                const avgPerUser = day.usuarios_unicos > 0 ? (day.snippets_vistos / day.usuarios_unicos).toFixed(1) : '0';
+                row.innerHTML = `
+                    <td>${formatDate(day.fecha)}</td>
+                    <td><span class="badge badge-info">${day.snippets_vistos}</span></td>
+                    <td><span class="badge badge-success">${day.usuarios_unicos}</span></td>
+                    <td>${avgPerUser}</td>
+                `;
+            });
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function getPopularityText(count) {
+            if (count > 10) return '🔥 Muy Popular';
+            if (count > 5) return '⭐ Popular';
+            if (count > 2) return '👍 Moderado';
+            return '📊 Bajo';
+        }
+    </script>
+</body>
+</html>

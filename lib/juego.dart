@@ -6,6 +6,7 @@ import 'dart:math';
 import 'dart:async';
 import 'package:provider/provider.dart';
 import '../user_manager.dart';
+import '../services/snippet_service.dart';
 
 class GameScreen extends StatefulWidget {
   @override
@@ -51,6 +52,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     super.initState();
     _initializeAnimations();
     _playBackgroundMusic();
+    
+    // Desactivar snippets durante el juego
+    SnippetService().setGameOrCalculatorActive(true);
   }
   
   void _initializeAnimations() {
@@ -322,42 +326,56 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     _soundPlayer.dispose();
     _gameTimer?.cancel();
     _spawnTimer?.cancel();
+    
+    // Reactivar snippets al salir del juego
+    SnippetService().setGameOrCalculatorActive(false);
+    
     super.dispose();
   }
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFF0A0E21),
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/game/fondo2.jpg'),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: Stack(
-          children: [
-            // Contenido principal
-            SafeArea(
-              child: Column(
-                children: [
-                  // Header de navegación
-                  _buildHeader(),
-                  
-                  // Contenido según la pantalla actual
-                  Expanded(
-                    child: _buildCurrentScreen(),
-                  ),
-                ],
-              ),
+    return WillPopScope(
+      onWillPop: () async {
+        // Solo permitir salir con swipe en pantallas de bienvenida e instrucciones
+        // Durante el juego (pantalla 2), bloquear el swipe
+        if (_currentScreen == 2) {
+          return false; // Bloquear swipe durante el juego
+        }
+        return true; // Permitir swipe en otras pantallas
+      },
+      child: Scaffold(
+        backgroundColor: Color(0xFF0A0E21),
+        body: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/game/fondo2.jpg'),
+              fit: BoxFit.cover,
             ),
-            
-            // Overlay de game over
-            if (_gameOver) _buildGameOverOverlay(),
-          ],
+          ),
+          child: Stack(
+            children: [
+              // Contenido principal
+              SafeArea(
+                child: Column(
+                  children: [
+                    // Header de navegación
+                    _buildHeader(),
+                    
+                    // Contenido según la pantalla actual
+                    Expanded(
+                      child: _buildCurrentScreen(),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Overlay de game over
+              if (_gameOver) _buildGameOverOverlay(),
+            ],
+          ),
         ),
       ),
     );

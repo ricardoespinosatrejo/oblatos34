@@ -87,6 +87,15 @@ class UserManager extends ChangeNotifier {
     notifyListeners();
   }
   
+  /// Actualizar puntos del usuario (desde base de datos)
+  void updateUserPoints(int newTotalPoints) {
+    _puntos = newTotalPoints;
+    if (_currentUser != null) {
+      _currentUser!['puntos'] = _puntos;
+    }
+    notifyListeners();
+  }
+  
   /// Actualizar sesión diaria y calcular puntos
   void updateSesionDiaria() {
     final hoy = DateTime.now();

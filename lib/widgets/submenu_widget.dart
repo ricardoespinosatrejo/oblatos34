@@ -215,33 +215,37 @@ class _SubmenuWidgetState extends State<SubmenuWidget> with TickerProviderStateM
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Etiqueta "Juego"
-                        SizedBox(
-                          width: 156,
-                          child: Text(
-                            'Juego',
-                            style: TextStyle(
-                              fontFamily: 'GothamRounded',
-                              fontSize: 12,
-                              color: Colors.black,
-                              fontWeight: FontWeight.w600,
+                        // Etiqueta "Juego" - Movida 10px a la derecha con Transform
+                        Transform.translate(
+                          offset: Offset(10, 0), // Mover 10px a la derecha
+                          child: SizedBox(
+                            width: 156,
+                            child: Text(
+                              'JUEGO MOVIDO',
+                              style: TextStyle(
+                                fontFamily: 'GothamRounded',
+                                fontSize: 12,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                         SizedBox(width: 9),
-                        // Etiqueta "Calculadora"
-                        SizedBox(
+                        // Etiqueta "Calculadora" - Con padding derecho para moverla a la izquierda
+                        Container(
                           width: 150,
+                          padding: EdgeInsets.only(right: 30), // Padding derecho grande
                           child: Text(
-                            'Calculadora',
+                            'CALCULADORA',
                             style: TextStyle(
                               fontFamily: 'GothamRounded',
                               fontSize: 12,
                               color: Colors.black,
                               fontWeight: FontWeight.w600,
                             ),
-                            textAlign: TextAlign.center,
+                            textAlign: TextAlign.right, // Cambiado a right para que se vea el efecto
                           ),
                         ),
                       ],

@@ -313,15 +313,15 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  _buildVideoButton(1, 'disco1.png', 'Cooperación en Acción'),
+                  _buildVideoButton(1, 'disco1.png', '¡Tu alcancía mágica!'),
                   SizedBox(height: 20),
-                  _buildVideoButton(2, 'disco1.png', 'Valores Cooperativos'),
+                  _buildVideoButton(2, 'disco1.png', 'Presupuesto ¡Fácil!'),
                   SizedBox(height: 20),
-                  _buildVideoButton(3, 'disco1.png', 'Trabajo en Equipo'),
+                  _buildVideoButton(3, 'disco1.png', 'Cambia hábitos ¡Ahorra mucho!'),
                   SizedBox(height: 20),
-                  _buildVideoButton(4, 'disco1.png', 'Liderazgo Compartido'),
+                  _buildVideoButton(4, 'disco1.png', '¡Alerta Online!'),
                   SizedBox(height: 20),
-                  _buildVideoButton(5, 'disco1.png', 'Comunidad Unida'),
+                  _buildVideoButton(5, 'disco1.png', 'Cuida tus recursos'),
                 ],
               ),
             ),
@@ -633,15 +633,15 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
   String _getVideoTitle(int videoIndex) {
     switch (videoIndex) {
       case 1:
-        return 'Introducción a la Cooperación';
+        return '¡Tu alcancía mágica!';
       case 2:
-        return 'Principios Básicos';
+        return 'Presupuesto ¡Fácil!';
       case 3:
-        return 'Historia de Caja Oblatos';
+        return 'Cambia hábitos ¡Ahorra mucho!';
       case 4:
-        return 'Beneficios de la Cooperación';
+        return '¡Alerta Online!';
       case 5:
-        return 'Futuro de la Cooperación';
+        return 'Cuida tus recursos';
       default:
         return 'Video $videoIndex';
     }
@@ -650,15 +650,15 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
   String _getVideoBody(int videoIndex) {
     switch (videoIndex) {
       case 1:
-        return 'En este primer episodio, exploramos los fundamentos de la cooperación y cómo Caja Oblatos ha sido pionera en este modelo económico. Descubriremos por qué la cooperación es más que una simple estrategia de negocio, sino una filosofía de vida que beneficia a toda la comunidad.\n\nLa cooperación se basa en principios de solidaridad, democracia y equidad, valores que han guiado a Caja Oblatos desde su fundación. A través de ejemplos prácticos y testimonios reales, entenderemos cómo estos principios se aplican en el día a día.';
+        return 'En este primer video "¡Tu Alcancía Mágica!" te llevamos a descubrir que el ahorro puede ser emocionante, sencillo y hasta mágico. A través de un personaje divertido —Anty— aprenderás que cada moneda que guardas es un paso hacia cumplir tus sueños. ¿Quieres unos tenis nuevos, ese videojuego que tanto esperas o un libro increíble? Tu alcancía puede ser la llave para conseguirlo.\n\nEste video no solo explica el concepto de ahorrar, también lo transforma en una aventura divertida, llena de emoción y motivación. Descubrirás que tu alcancía es como un superhéroe financiero que guarda tu dinero y te acerca cada día más a lo que quieres.';
       case 2:
-        return 'Los principios básicos de la cooperación son la base sobre la cual se construye todo el sistema. En este episodio, profundizamos en cada uno de estos principios y cómo se manifiestan en las operaciones diarias de Caja Oblatos.\n\nDesde la adhesión voluntaria hasta la preocupación por la comunidad, cada principio tiene un propósito específico y contribuye al éxito del modelo cooperativo. Analizaremos casos de estudio y veremos cómo estos principios han evolucionado con el tiempo.';
+        return 'En este segundo capítulo "El Mapa de tu Dinero: ¡Presupuesto Fácil!" descubrirás una herramienta que te hará sentir en control total: el presupuesto. Con la ayuda de Anty aprenderás que tu dinero no "desaparece", sino que viaja por distintos caminos… y tú puedes decidir hacia dónde va.\n\nEste video te mostrará que un presupuesto no es complicado ni aburrido, sino un superpoder para manejar tu dinero con inteligencia. Aprenderás a usar una libreta, una app o lo que prefieras para anotar tus ingresos y gastos, y así estar siempre preparado.';
       case 3:
-        return 'La historia de Caja Oblatos es una historia de perseverancia, innovación y compromiso con la comunidad. Desde sus humildes comienzos hasta convertirse en una institución financiera líder, cada paso ha sido guiado por la visión de crear un futuro mejor para todos.\n\nExploraremos los momentos clave de esta trayectoria, los desafíos superados y las lecciones aprendidas. Esta historia no solo nos enseña sobre el pasado, sino que también ilumina el camino hacia el futuro.';
+        return 'En este episodio "¡Cambia Hábitos, Ahorra Mucho!" descubrirás que no necesitas hacer grandes sacrificios para tener más dinero, solo basta con pequeños cambios en tu día a día. Anty te mostrará cómo esas decisiones simples, como llevar tu propio termo en lugar de comprar botellas o preparar un snack en casa, pueden convertirse en grandes ahorros al final del mes.\n\nEste video transforma la idea del ahorro en un juego divertido donde cada acción cuenta y cada hábito suma. Aprenderás que ser constante con estos pequeños cambios te da más control, más dinero y más posibilidades de cumplir lo que te propones.';
       case 4:
-        return 'Los beneficios de la cooperación van más allá de los aspectos financieros. En este episodio, exploramos cómo la cooperación mejora la calidad de vida de las personas, fortalece las comunidades y crea un sistema económico más justo y sostenible.\n\nDesde mejores tasas de interés hasta programas de educación financiera, los beneficios son tangibles y duraderos. Veremos cómo estos beneficios se distribuyen equitativamente entre todos los miembros de la cooperativa.';
+        return 'En el capítulo "¡Alerta, Falsas Promesas Online!" aprenderás a detectar las trampas digitales más comunes y protegerte de los engaños que circulan en Internet. Anty te guiará con ejemplos claros de esas ofertas que parecen increíbles, pero en realidad son un fraude: desde ganar dinero en minutos hasta conseguir celulares o videojuegos gratis.\n\nTambién descubrirás la importancia de compartir cualquier duda con un adulto de confianza: papás, tíos o maestros, quienes pueden ayudarte a confirmar si algo es real o un intento de estafa.';
       case 5:
-        return 'El futuro de la cooperación es brillante y lleno de posibilidades. En este episodio final, exploramos las tendencias emergentes, las nuevas tecnologías y las oportunidades que se presentan para el modelo cooperativo.\n\nDesde la digitalización hasta la expansión internacional, las cooperativas están evolucionando para enfrentar los desafíos del siglo XXI. Descubriremos cómo Caja Oblatos se está preparando para este futuro y qué significa para sus miembros.';
+        return 'En el episodio "¡Practica el uso y administración de recursos!" descubrirás que los videojuegos no solo sirven para divertirse, también pueden enseñarte a manejar tu dinero y tus decisiones financieras. Anty te mostrará cómo los juegos de simulación —desde construir tu propia ciudad en SimCity, hasta crear mundos y economías en Roblox o administrar recursos en Minecraft— son una herramienta increíble para aprender jugando.';
       default:
         return 'Contenido del video $videoIndex. Este es un texto de ejemplo que muestra cómo se verá el contenido con scroll cuando se implemente la funcionalidad completa.';
     }
@@ -803,14 +803,20 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        SizedBox(
-                          width: 156,
-                          child: Text('Juego', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                        Transform.translate(
+                          offset: Offset(20, 0), // Mover 20px a la derecha
+                          child: SizedBox(
+                            width: 156,
+                            child: Text('Juego', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                          ),
                         ),
                         SizedBox(width: 9),
-                        SizedBox(
-                          width: 150,
-                          child: Text('Calculadora', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                        Transform.translate(
+                          offset: Offset(-18, 0), // Mover 18px a la izquierda
+                          child: SizedBox(
+                            width: 150,
+                            child: Text('Calculadora', style: TextStyle(fontFamily: 'GothamRounded', fontSize: 12, color: Colors.black, fontWeight: FontWeight.w600), textAlign: TextAlign.center),
+                          ),
                         ),
                       ],
                     ),

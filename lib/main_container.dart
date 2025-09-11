@@ -19,43 +19,21 @@ class MainContainer extends StatefulWidget {
 
 class _MainContainerState extends State<MainContainer> {
   String _currentRoute = '/menu';
-  late PageController _pageController;
-  late int _currentIndex;
   
   @override
   void initState() {
     super.initState();
     _currentRoute = widget.initialRoute;
-    _currentIndex = _getIndexForRoute(_currentRoute);
-    _pageController = PageController(initialPage: _currentIndex);
   }
+  
+  
 
-  int _getIndexForRoute(String route) {
-    switch (route) {
-      case '/menu':
-        return 0;
-      case '/caja':
-        return 1;
-      case '/poder-cooperacion':
-        return 2;
-      case '/aprendiendo-cooperativa':
-        return 3;
-      case '/agentes-cambio':
-        return 4;
-      case '/eventos':
-        return 5;
-      case '/video-blog':
-        return 6;
-      default:
-        return 0;
-    }
-  }
 
-  void _navigateToRoute(String route) {
-    setState(() {
-      _currentRoute = route;
-    });
+  @override
+  void dispose() {
+    super.dispose();
   }
+  
 
   Widget _getCurrentScreen() {
     switch (_currentRoute) {
@@ -92,45 +70,28 @@ class _MainContainerState extends State<MainContainer> {
         ),
         child: Stack(
           children: [
-            // Contenido principal que cambia (con espacio para el menú)
+            // Contenido principal que cambia (con espacio para el menú solo cuando no esté en el menú principal)
             Positioned.fill(
-              bottom: 98, // Altura del menú rojo
+              bottom: _currentRoute == '/menu' ? 0 : 98, // Altura del menú rojo solo cuando no esté en el menú
               child: _getCurrentScreen(),
             ),
             
-            // Menú inferior FIJO (en Stack con Positioned)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: BottomNavigationMenu(),
-            ),
+            // Menú inferior FIJO (en Stack con Positioned) - Solo mostrar cuando NO esté en el menú principal
+            if (_currentRoute != '/menu')
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: BottomNavigationMenu(),
+              ),
+            
+            // Overlay de snippets ahora manejado globalmente
           ],
         ),
       ),
     );
   }
 
-  String _getRouteForIndex(int index) {
-    switch (index) {
-      case 0:
-        return '/menu';
-      case 1:
-        return '/caja';
-      case 2:
-        return '/poder-cooperacion';
-      case 3:
-        return '/aprendiendo-cooperativa';
-      case 4:
-        return '/agentes-cambio';
-      case 5:
-        return '/eventos';
-      case 6:
-        return '/video-blog';
-      default:
-        return '/menu';
-    }
-  }
 }
 
 
