@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'menu.dart';
+import 'services/snippet_service.dart';
 import 'user_manager.dart';
 
 void main() {
@@ -61,6 +62,18 @@ class _InicioPageState extends State<InicioPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
+  void initState() {
+    super.initState();
+    // Pausar snippets durante registro/login
+    try {
+      SnippetService().setGameOrCalculatorActive(true);
+      print('🛑 Snippets pausados en pantalla de inicio/auth');
+    } catch (e) {
+      print('No se pudo pausar snippets en inicio: $e');
+    }
+  }
+
+  @override
   void dispose() {
     _usuarioController.dispose();
     _nombreCompletoController.dispose();
@@ -74,6 +87,12 @@ class _InicioPageState extends State<InicioPage> {
     _telefonoFocusNode.dispose();
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
+    try {
+      SnippetService().setGameOrCalculatorActive(false);
+      print('▶️ Snippets reanudados al salir de inicio/auth');
+    } catch (e) {
+      print('No se pudo reanudar snippets al salir de inicio: $e');
+    }
     super.dispose();
   }
 
@@ -214,7 +233,8 @@ class _InicioPageState extends State<InicioPage> {
             userManager.setCurrentUser(tempUser);
           }
           
-          // Navegar al menú
+          // Reanudar snippets y navegar al menú
+          try { SnippetService().setGameOrCalculatorActive(false); } catch (_) {}
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => HomeScreen()),
@@ -334,7 +354,8 @@ class _InicioPageState extends State<InicioPage> {
           // NUEVO: Actualizar sesión diaria automáticamente al hacer login
           await _actualizarSesionDiaria(userManager);
           
-          // Navegar al menú
+          // Reanudar snippets y navegar al menú
+          try { SnippetService().setGameOrCalculatorActive(false); } catch (_) {}
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => HomeScreen()),

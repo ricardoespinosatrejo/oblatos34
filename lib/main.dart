@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'inicio.dart';
@@ -21,6 +22,8 @@ void main() async {
   
   // Inicializar datos de localización para español
   await initializeDateFormatting('es_ES', null);
+  // Android: Modo inmersivo (oculta barra del sistema; aparece con swipe)
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   
   
   runApp(MyApp());

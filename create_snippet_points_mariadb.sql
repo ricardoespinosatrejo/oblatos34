@@ -15,3 +15,4 @@ CREATE UNIQUE INDEX unique_user_snippet_date ON snippet_points (user_id, snippet
 
 -- Agregar columna de puntos diarios
 ALTER TABLE usuarios ADD COLUMN puntos_diarios INT DEFAULT 0;
+

@@ -48,3 +48,4 @@ BEGIN
     WHERE id = NEW.user_id;
 END //
 DELIMITER ;
+

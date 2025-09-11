@@ -3,6 +3,8 @@ import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'widgets/header_navigation.dart';
+import 'services/app_orientation_service.dart';
+import 'services/snippet_service.dart';
 
 class VideoBlogScreen extends StatefulWidget {
   @override
@@ -705,6 +707,15 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
         ),
       );
       
+      // Pausar snippets mientras se reproduce el video
+      try {
+        SnippetService().setGameOrCalculatorActive(true);
+        print('🛑 Snippets pausados durante reproducción de video');
+      } catch (_) {}
+
+      // Permitir landscape mientras se reproduce el video
+      AppOrientationService().setAllowLandscape(true);
+
       // Navegar a la pantalla de video
       final result = await Navigator.push(
         context,
@@ -721,6 +732,13 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
         _videoController?.pause();
         _videoController?.seekTo(Duration.zero);
       }
+
+      // Reanudar snippets y bloquear landscape al cerrar el video
+      try {
+        SnippetService().setGameOrCalculatorActive(false);
+        print('▶️ Snippets reanudados después de video');
+      } catch (_) {}
+      AppOrientationService().setAllowLandscape(false);
     } catch (e) {
       print('Error reproduciendo video: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -846,6 +864,8 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
+  bool _wasLandscape = false;
+
   @override
   void initState() {
     super.initState();
@@ -854,12 +874,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       // Asegurar que el video se pause cuando se cierre la pantalla
       widget.chewieController.videoPlayerController.pause();
     });
+    // Pausar snippets al entrar al reproductor por seguridad
+    try { SnippetService().setGameOrCalculatorActive(true); } catch (_) {}
+    // Permitir landscape en reproductor
+    AppOrientationService().setAllowLandscape(true);
   }
   
   @override
   void dispose() {
     // Pausar el video al cerrar la pantalla
     widget.chewieController.videoPlayerController.pause();
+    // Reanudar snippets al salir del reproductor
+    try { SnippetService().setGameOrCalculatorActive(false); } catch (_) {}
+    // Bloquear landscape al salir
+    AppOrientationService().setAllowLandscape(false);
     super.dispose();
   }
   
@@ -868,8 +896,24 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Column(
-          children: [
+        child: OrientationBuilder(
+          builder: (context, orientation) {
+            final bool isLandscape = orientation == Orientation.landscape;
+            if (isLandscape && !_wasLandscape) {
+              // Entrar a fullscreen al rotar a horizontal
+              Future.delayed(Duration(milliseconds: 100), () {
+                try { widget.chewieController.enterFullScreen(); } catch (_) {}
+              });
+              _wasLandscape = true;
+            } else if (!isLandscape && _wasLandscape) {
+              // Salir de fullscreen al volver a vertical
+              Future.delayed(Duration(milliseconds: 100), () {
+                try { widget.chewieController.exitFullScreen(); } catch (_) {}
+              });
+              _wasLandscape = false;
+            }
+            return Column(
+              children: [
             // Header con botón regresar
             Padding(
               padding: EdgeInsets.all(20),
@@ -928,7 +972,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 child: Chewie(controller: widget.chewieController),
               ),
             ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );

@@ -47,3 +47,4 @@ ADD COLUMN recordatorio_horas INT DEFAULT 24;
 
 
 
+

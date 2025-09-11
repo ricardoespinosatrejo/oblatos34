@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Permiso de Internet para llamadas a APIs -->
+    <uses-permission android:name="android.permission.INTERNET" />
     
     <!-- Permisos de cámara -->
     <uses-permission android:name="android.permission.CAMERA" />
