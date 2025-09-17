@@ -93,6 +93,7 @@ flutter:
     - assets/images/home/
     - assets/images/menu/
     - assets/images/instrucciones/
+    - assets/images/calculadora/
     - assets/images/caja/
     - assets/images/poder/
     - assets/images/aprendiendo/

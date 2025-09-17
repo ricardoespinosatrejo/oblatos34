@@ -124,3 +124,5 @@ INSERT IGNORE INTO categorias_eventos (nombre, color, descripcion) VALUES
 
 
 
+
+

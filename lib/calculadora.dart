@@ -141,18 +141,33 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
                   padding: EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      // Header con título y estrellas
-                      _buildHeaderCalculadora(),
-                      
-                      SizedBox(height: 30),
-                      
-                      if (!_mostrarResultado) ...[
-                        // Formulario de entrada
-                        _buildFormulario(),
-                      ] else ...[
-                        // Resultados
-                        _buildResultados(),
-                      ],
+                      // Contenedor con imagen de fondo para la sección de la calculadora
+                      Container(
+                        width: double.infinity,
+                        constraints: BoxConstraints(minHeight: 400),
+                        decoration: BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage(_mostrarResultado 
+                              ? 'assets/images/calculadora/fondo-calculadora2.png'
+                              : 'assets/images/calculadora/fondo-calculadora.png'),
+                            fit: BoxFit.cover,
+                            alignment: Alignment.topCenter,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 266, left: 16, right: 16, bottom: 16),
+                          child: Column(
+                            children: [
+                              if (!_mostrarResultado) ...[
+                                _buildFormulario(),
+                              ] else ...[
+                                _buildResultados(),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -381,15 +396,7 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 5),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,7 +408,7 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
               fontFamily: 'Gotham Rounded',
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF333333),
+              color: Color(0xFF6E88A8),
             ),
           ),
           SizedBox(height: 8),
@@ -411,11 +418,11 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
               hintText: 'Ej: Un juguete nuevo, un libro...',
               hintStyle: TextStyle(color: Colors.grey[400]),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(40),
                 borderSide: BorderSide(color: Colors.grey[300]!),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(30),
                 borderSide: BorderSide(color: Colors.grey[300]!),
               ),
               focusedBorder: OutlineInputBorder(
@@ -435,7 +442,7 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
               fontFamily: 'Gotham Rounded',
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF333333),
+              color: Color(0xFF6E88A8),
             ),
           ),
           SizedBox(height: 8),
@@ -471,7 +478,7 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
               fontFamily: 'Gotham Rounded',
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF333333),
+              color: Color(0xFF6E88A8),
             ),
           ),
           SizedBox(height: 8),
@@ -526,7 +533,7 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
                               style: TextStyle(
                                 fontFamily: 'Gotham Rounded',
                                 fontSize: 12,
-                                color: Color(0xFF333333),
+                                color: Color(0xFF6E88A8),
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -559,7 +566,7 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
                 gradient: LinearGradient(
                   colors: [Color(0xFF9C27B0), Color(0xFF673AB7)],
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
                     color: Color(0xFF9C27B0).withOpacity(0.3),
@@ -594,35 +601,12 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
           width: double.infinity,
           padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Color(0xFF2196F3), style: BorderStyle.solid, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: Offset(0, 5),
-              ),
-            ],
           ),
           child: Column(
             children: [
-              // Icono de moneda
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Color(0xFFC0C0C0),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.monetization_on,
-                  color: Colors.white,
-                  size: 30,
-                ),
-              ),
-              
-              SizedBox(height: 20),
+              // Espacio superior (icono de moneda removido)
+              SizedBox(height: 8),
               
               // Detalles del deseo
               Text(
@@ -685,16 +669,19 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
           width: double.infinity,
           padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Color(0xFFFFF9C4),
+            gradient: LinearGradient(
+              colors: [Color(0xFFB85BF3), Color(0xFFE35BF3)],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: Color(0xFFFFD700)),
           ),
           child: Text(
             '¡Tu esfuerzo vale la pena! En ${_resultado['tiempo']} ${_resultado['unidad']} disfrutarás de tu deseo 🎁',
             style: TextStyle(
               fontFamily: 'Gotham Rounded',
               fontSize: 16,
-              color: Color(0xFF8B4513),
+              color: Colors.white,
             ),
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
@@ -714,7 +701,7 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
               gradient: LinearGradient(
                 colors: [Color(0xFFE91E63), Color(0xFFC2185B)],
               ),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(30),
               boxShadow: [
                 BoxShadow(
                   color: Color(0xFFE91E63).withOpacity(0.3),

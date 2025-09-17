@@ -324,13 +324,14 @@ class _PerfilScreenState extends State<PerfilScreen> {
                         ),
                         child: Stack(
                           children: [
-                            // Fondo de la ficha
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Image.asset(
-                                'assets/images/perfil/ficha.png',
-                                width: double.infinity,
-                                fit: BoxFit.cover,
+                            // Fondo de la ficha (relleno completo)
+                            Positioned.fill(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: Image.asset(
+                                  'assets/images/perfil/ficha.png',
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
 
@@ -346,28 +347,26 @@ class _PerfilScreenState extends State<PerfilScreen> {
                                    // Información del usuario
                                    _buildUserInfoSection(),
  
-                                   SizedBox(height: 12), // Reducido de 15 a 12
-                                   // Botón de puntos
-                                   GestureDetector(
-                                     onTap: () {
-                                       _showPuntosDetalle();
-                                     },
-                                     child: _buildPointsButton(),
-                                   ),
+                                  SizedBox(height: 16),
+                                  // Contenedores de puntos y racha
+                                  _buildPointsRow(),
                                    
                                    SizedBox(height: 8), // Reducido de 15 a 8
                                    // Información adicional de puntos
                                    _buildPuntosInfo(),
  
-                                   SizedBox(height: 18), // Reducido de 20 a 18
-                                   // Información del padre/madre
-                                   _buildParentInfoSection(),
+                                  SizedBox(height: 24),
                                 ],
                               ),
                             ),
                           ],
                         ),
                       ),
+
+                      SizedBox(height: 20),
+
+                      // Información del padre/madre fuera de la ficha principal
+                      _buildParentInfoSection(),
 
                       SizedBox(height: 30),
 
@@ -416,23 +415,23 @@ class _PerfilScreenState extends State<PerfilScreen> {
             return GestureDetector(
               onTap: () => _selectProfileImage(imageNumber),
               child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 8),
-                width: 40,
-                height: 40,
+                margin: EdgeInsets.symmetric(horizontal: 7),
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: isSelected
-                        ? Color(0xFF9C27B0)
-                        : Colors.grey.shade300,
-                    width: isSelected ? 3 : 1,
+                        ? Color(0xFF5CF49D)
+                        : Colors.grey.shade400,
+                    width: isSelected ? 5 : 3,
                   ),
                 ),
                 child: ClipOval(
                   child: Image.asset(
                     _getProfileImagePath(imageNumber),
-                    width: 40,
-                    height: 40,
+                    width: 80,
+                    height: 80,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -497,11 +496,14 @@ class _PerfilScreenState extends State<PerfilScreen> {
     required String value,
     TextEditingController? controller,
     required bool isEditing,
+    Color? labelColor,
+    Color? borderColor,
+    Color? valueColor,
   }) {
     return Container(
       width: double.infinity, // Forzar ancho completo
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
@@ -509,97 +511,119 @@ class _PerfilScreenState extends State<PerfilScreen> {
               fontFamily: 'Gotham Rounded',
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF9C27B0),
+              color: labelColor ?? Color(0xFFAAA7C7),
             ),
           ),
           SizedBox(height: 1), // Reducido de 2 a 1 (super pegado)
-          if (isEditing && controller != null)
-            TextField(
-              controller: controller,
-              style: TextStyle(
-                fontFamily: 'Gotham Rounded',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Color(0xFF9C27B0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Color(0xFF9C27B0), width: 2),
-                ),
-              ),
-            )
-          else
-            Text(
-              value,
-              style: TextStyle(
-                fontFamily: 'Gotham Rounded',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
+          Container(
+            width: double.infinity,
+            height: 48,
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 11),
+            decoration: BoxDecoration(
+              color: (isEditing && controller != null) ? Color(0xFFFFF59D) : Colors.transparent,
+              border: Border.all(color: (borderColor ?? Color(0xFFAAA7C7)), width: 2),
+              borderRadius: BorderRadius.circular(23),
             ),
+            child: isEditing && controller != null
+                ? TextField(
+                    controller: controller,
+                    textAlignVertical: TextAlignVertical.center,
+                    maxLines: 1,
+                    style: TextStyle(
+                      fontFamily: 'GothamRounded',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: valueColor ?? Color(0xFF2B2372),
+                    ),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 12),
+                    ),
+                  )
+                : Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontFamily: 'GothamRounded',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: valueColor ?? Color(0xFF2B2372),
+                      ),
+                    ),
+                  ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPointsButton() {
+  Widget _buildPointsRow() {
     return Consumer<UserManager>(
       builder: (context, userManager, child) {
         final puntos = userManager.puntos;
         final rachaDias = userManager.rachaDias;
-        
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: Color(0xFF9C27B0),
-            borderRadius: BorderRadius.circular(25),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Icono de puntos
-              Image.asset(
-                'assets/images/perfil/puntos.png',
-                width: 24,
-                height: 24,
-                color: Colors.amber,
+
+        return Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: _showPuntosDetalle,
+                child: Container(
+                  height: 41,
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF703FC2),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Row(
+                    children: [
+                      Image.asset(
+                        'assets/images/perfil/puntos-img.png',
+                        width: 28,
+                        height: 28,
+                        fit: BoxFit.contain,
+                      ),
+                      SizedBox(width: 13),
+                      Text(
+                        '$puntos puntos',
+                        style: TextStyle(
+                          fontFamily: 'GothamRounded',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              SizedBox(width: 12),
-              // Texto de puntos dinámico
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$puntos PUNTOS',
+            ),
+
+            SizedBox(width: 10),
+
+            Expanded(
+              child: Container(
+                height: 41,
+                padding: EdgeInsets.symmetric(horizontal: 39, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Color(0xFF703FC2),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Center(
+                  child: Text(
+                    'Racha: $rachaDias día${rachaDias == 1 ? '' : 's'}',
                     style: TextStyle(
-                      fontFamily: 'Gotham Rounded',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontFamily: 'GothamRounded',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                       color: Colors.white,
                     ),
                   ),
-                  if (rachaDias > 0)
-                    Text(
-                      'Racha: $rachaDias días',
-                      style: TextStyle(
-                        fontFamily: 'Gotham Rounded',
-                        fontSize: 10,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white70,
-                      ),
-                    ),
-                ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
@@ -625,7 +649,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                   fontFamily: 'Gotham Rounded',
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF9C27B0),
+                  color: Color(0xFFAAA7C7),
                 ),
               ),
               SizedBox(height: 8),
@@ -662,7 +686,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
             fontFamily: 'Gotham Rounded',
             fontSize: 10,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF9C27B0).withOpacity(0.8),
+            color: Color(0xFFAAA7C7),
           ),
         ),
         SizedBox(height: 4),
@@ -670,9 +694,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
           value,
           style: TextStyle(
             fontFamily: 'Gotham Rounded',
-            fontSize: 11,
+            fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Color(0xFF2B2372),
           ),
         ),
       ],
@@ -830,9 +854,16 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   Widget _buildParentInfoSection() {
     return Container(
-      padding: EdgeInsets.all(25),
+      padding: EdgeInsets.symmetric(horizontal: 25, vertical: 40),
       decoration: BoxDecoration(
-        color: Color(0xFFE1BEE7), // Morado claro
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            Color(0xFFB85BF3),
+            Color(0xFFE45BF3),
+          ],
+        ),
         borderRadius: BorderRadius.circular(15),
       ),
       child: Column(
@@ -844,17 +875,20 @@ class _PerfilScreenState extends State<PerfilScreen> {
               fontFamily: 'Gotham Rounded',
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF9C27B0),
+              color: Colors.white,
             ),
           ),
 
-          SizedBox(height: 6), // Reducido de 8 a 6
+          SizedBox(height: 22),
           // Nombre del padre/madre
           _buildInfoField(
             label: 'NOMBRE',
             value: _nombrePadreController.text.isNotEmpty ? _nombrePadreController.text : 'No especificado',
             controller: _nombrePadreController,
             isEditing: _isEditing,
+            labelColor: Colors.white,
+            borderColor: Colors.white.withOpacity(0.5),
+            valueColor: _isEditing ? Color(0xFF2B2372) : Colors.white,
           ),
 
           SizedBox(height: 10), // Reducido de 12 a 10
@@ -864,6 +898,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
             value: _telefonoController.text.isNotEmpty ? _telefonoController.text : 'No especificado',
             controller: _telefonoController,
             isEditing: _isEditing,
+            labelColor: Colors.white,
+            borderColor: Colors.white.withOpacity(0.5),
+            valueColor: _isEditing ? Color(0xFF2B2372) : Colors.white,
           ),
         ],
       ),
@@ -922,14 +959,14 @@ class _PerfilScreenState extends State<PerfilScreen> {
         ],
       );
     } else {
-      return SizedBox(
-        width: double.infinity,
+      return Align(
+        alignment: Alignment.center,
         child: ElevatedButton(
           onPressed: _toggleEdit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF9C27B0),
+            backgroundColor: Color(0xFFF44336),
             foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(vertical: 15),
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(25),
             ),

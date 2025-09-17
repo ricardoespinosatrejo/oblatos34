@@ -15,3 +15,5 @@ CREATE TABLE IF NOT EXISTS snippet_points (
 ALTER TABLE usuarios 
 ADD COLUMN IF NOT EXISTS puntos_diarios INT DEFAULT 0;
 
+
+

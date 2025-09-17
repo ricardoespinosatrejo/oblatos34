@@ -351,7 +351,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           height: double.infinity,
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage('assets/images/game/fondo2.jpg'),
+              image: AssetImage(_currentScreen == 0 
+                ? 'assets/images/game/portada2.jpg'  // Solo bienvenida
+                : 'assets/images/game/fondo2.jpg'), // Instrucciones y juego
               fit: BoxFit.cover,
             ),
           ),
@@ -406,31 +408,32 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           
           Spacer(),
           
-          // Título
-          Column(
-            children: [
-              Text(
-                'BIENVENIDOS',
-                style: TextStyle(
-                  fontFamily: 'Gotham Rounded',
-                  fontSize: 19,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                  letterSpacing: 1.5,
+          // Título (oculto en la pantalla de bienvenida)
+          if (_currentScreen != 0)
+            Column(
+              children: [
+                Text(
+                  'BIENVENIDOS',
+                  style: TextStyle(
+                    fontFamily: 'Gotham Rounded',
+                    fontSize: 19,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    letterSpacing: 1.5,
+                  ),
                 ),
-              ),
-              Text(
-                'JUEGO DE AHORRO',
-                style: TextStyle(
-                  fontFamily: 'Gryzensa',
-                  fontSize: 28,
-                  fontWeight: FontWeight.w300,
-                  color: Colors.white70,
-                  height: 0.8,
+                Text(
+                  'JUEGO DE AHORRO',
+                  style: TextStyle(
+                    fontFamily: 'Gryzensa',
+                    fontSize: 28,
+                    fontWeight: FontWeight.w300,
+                    color: Colors.white70,
+                    height: 0.8,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           
           Spacer(),
           
@@ -459,77 +462,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Imagen de portada
-          Container(
-            width: 300,
-            height: 200,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(
-                image: AssetImage('assets/images/game/portada.jpg'),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          
-          SizedBox(height: 40),
-          
-          // Título principal
-          Text(
-            'Nivel: $_level',
-            style: TextStyle(
-              fontFamily: 'Gotham Rounded',
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFFFFD700),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          
-          SizedBox(height: 10),
-          
-          // Ahorro actual
-          Text(
-            'Ahorro: $_score',
-            style: TextStyle(
-              fontFamily: 'Gotham Rounded',
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          
-          SizedBox(height: 10),
-          
-          // Puntos para siguiente nivel
-          Text(
-            '${_getRequiredPointsForLevel(_level) - _score} puntos',
-            style: TextStyle(
-              fontFamily: 'Gotham Rounded',
-              fontSize: 18,
-              color: Colors.white70,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          
-          SizedBox(height: 30),
-          
-          // Descripción
-          Text(
-            '¡Bienvenido al reto del ahorro!\nAtrapa monedas, evita los malos hábitos\ny haz crecer tu alcancía',
-            style: TextStyle(
-              fontFamily: 'Gotham Rounded',
-              fontSize: 16,
-              color: Colors.white70,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          
-          SizedBox(height: 40),
-          
-          // Botón jugar
-          GestureDetector(
+          // Botón jugar (subido 150 px)
+          Transform.translate(
+            offset: Offset(0, -100),
+            child: GestureDetector(
             onTap: () {
               setState(() {
                 _currentScreen = 1;
@@ -561,6 +497,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     color: Colors.white,
                   ),
                 ),
+              ),
               ),
             ),
           ),
