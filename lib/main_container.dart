@@ -264,7 +264,7 @@ class _HomeScreenContentState extends State<HomeScreenContent> with TickerProvid
                 ),
               ),
               Text(
-                'MENU NAV',
+                'MENU',
                 style: TextStyle(
                   fontFamily: 'Gryzensa',
                   fontSize: 35,

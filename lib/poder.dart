@@ -123,7 +123,7 @@ class _PoderCooperacionScreenState extends State<PoderCooperacionScreen> with Ti
                         Navigator.pushNamed(context, '/menu');
                       },
                       title: 'BIENVENIDOS',
-                      subtitle: 'EL CORAZÓN DE\nCAJA OBLATOS',
+                      subtitle: 'EL PODER DE LA\nCOOPERACIÓN',
                     ),
                     
                     // Contenido específico de la pantalla
@@ -326,13 +326,13 @@ class _PoderCooperacionScreenState extends State<PoderCooperacionScreen> with Ti
                            SizedBox(height: 20),
                            _buildPrincipioButton('E', 'EQUIDAD', '¡Justicia para todos!', 5),
                            SizedBox(height: 20),
-                           _buildPrincipioButton('F', 'SOLIDARIDAD', '¡Juntos somos más fuertes!', 6),
+                           _buildPrincipioButton('F', 'HONESTIDAD', '¡La verdad siempre!', 6),
                            SizedBox(height: 20),
-                           _buildPrincipioButton('G', 'TRANSPARENCIA', '¡Claridad en todo!', 7),
+                           _buildPrincipioButton('G', 'SOLIDARIDAD', '¡Juntos somos más fuertes!', 7),
                            SizedBox(height: 20),
-                           _buildPrincipioButton('H', 'EDUCACIÓN', '¡Aprender para crecer!', 8),
+                           _buildPrincipioButton('H', 'TRANSPARENCIA', '¡Claridad en todo!', 8),
                            SizedBox(height: 20),
-                           _buildPrincipioButton('I', 'COMPROMISO', '¡Cumplir lo prometido!', 9),
+                           _buildPrincipioButton('I', 'COMPROMISO SOCIAL', '¡Servir a la comunidad!', 9),
                          ],
                        ),
                      ),

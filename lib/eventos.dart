@@ -152,18 +152,22 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
 
   Color _getCategoriaColor(String categoria) {
     switch (categoria) {
+      case 'Todas':
+        return Color(0xFFC1BFC1).withOpacity(0.3);
       case 'Reuniones':
-        return Colors.blue;
+        return Color(0xFFB036FE);
       case 'Campañas':
-        return Colors.green;
+        return Color(0xFFDB2EB0);
       case 'Talleres':
-        return Colors.orange;
+        return Color(0xFF30A9F5);
       case 'Eventos Sociales':
-        return Colors.purple;
+        return Color(0xFF49B48D);
       case 'Asambleas':
-        return Colors.red;
+        return Color(0xFFE50F0F);
       case 'General':
-        return Colors.grey;
+        return Color(0xFF6630F5);
+      case 'general':
+        return Color(0xFF6630F5);
       default:
         return Colors.grey;
     }
@@ -186,39 +190,11 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
             SafeArea(
         child: Column(
           children: [
-            // Header con título y botón de regreso
-            Container(
-              padding: EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.arrow_back_ios,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      'Eventos y Campañas',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            // Header de navegación reutilizable
+            HeaderNavigation(
+              onMenuTap: () => Navigator.pop(context),
+              title: 'BIENVENIDOS',
+              subtitle: 'EVENTOS Y\nCAMPAÑAS',
             ),
             
             // Barra de búsqueda
@@ -267,13 +243,18 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
                             label: Text(
                               categoria,
                               style: TextStyle(
-                                color: Colors.white,
+                                color: categoria == 'Todas' ? Color(0xFF585758) : Colors.white,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
                             selected: isSelected,
-                            selectedColor: _getCategoriaColor(categoria),
-                            backgroundColor: _getCategoriaColor(categoria).withOpacity(0.5),
+                            selectedColor: categoria == 'Todas' ? Color(0xFFC1BFC1).withOpacity(0.3) : _getCategoriaColor(categoria),
+                            backgroundColor: categoria == 'Todas' ? Color(0xFFC1BFC1).withOpacity(0.3) : _getCategoriaColor(categoria),
+                            side: categoria == 'Todas' ? BorderSide(color: Colors.white.withOpacity(0.6), width: 1) : null,
+                            checkmarkColor: categoria == 'Todas' ? Color(0xFF585758) : Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(35),
+                            ),
                       onSelected: (selected) {
                         setState(() {
                           _categoriaSeleccionada = categoria;
@@ -332,7 +313,7 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
                           color: Colors.white,
                           backgroundColor: Color(0xFF1E1E1E),
                           child: ListView.builder(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
+                            padding: EdgeInsets.fromLTRB(16, 0, 16, 100),
                             itemCount: _eventosFiltrados.length,
                             itemBuilder: (context, index) {
                               return _buildEventoCard(_eventosFiltrados[index]);
@@ -378,15 +359,15 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Color(0xFF5C34A7).withOpacity(0.4),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: categoriaColor.withOpacity(0.3),
+          color: Color(0xFF6A6969),
           width: 1,
         ),
       ),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -394,13 +375,15 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: categoriaColor,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    evento.categoria,
+                    evento.categoria.isNotEmpty 
+                        ? evento.categoria[0].toUpperCase() + evento.categoria.substring(1).toLowerCase()
+                        : evento.categoria,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -412,7 +395,7 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
                 Text(
                   _formatDate(evento.fechaInicio),
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Color(0xFF6E88A8),
                     fontSize: 14,
                   ),
                 ),
@@ -425,7 +408,7 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
             Text(
               evento.titulo,
               style: TextStyle(
-                color: Colors.white,
+                color: Colors.black,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -438,7 +421,7 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
               Text(
                 evento.descripcion,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Color(0xFF6E88A8),
                   fontSize: 14,
                 ),
                 maxLines: 3,
@@ -454,14 +437,14 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
                 if (!evento.esTodoElDia && evento.fechaInicio != null) ...[
                   Icon(
                     Icons.access_time,
-                    color: Colors.white.withOpacity(0.6),
+                    color: Color(0xFF6E88A8),
                     size: 16,
                   ),
                   SizedBox(width: 4),
                   Text(
                     _formatTime(evento.fechaInicio),
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Color(0xFF6E88A8),
                       fontSize: 14,
                     ),
                   ),
@@ -472,7 +455,7 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
                 if (evento.ubicacion.isNotEmpty) ...[
                   Icon(
                     Icons.location_on,
-                    color: Colors.white.withOpacity(0.6),
+                    color: Color(0xFF6E88A8),
                     size: 16,
                   ),
                   SizedBox(width: 4),
@@ -480,7 +463,7 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
                     child: Text(
                       evento.ubicacion,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Color(0xFF6E88A8),
                         fontSize: 14,
                       ),
                       maxLines: 1,
@@ -760,18 +743,22 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
 
   Color _getCategoriaColor(String categoria) {
     switch (categoria) {
+      case 'Todas':
+        return Color(0xFFC1BFC1).withOpacity(0.3);
       case 'Reuniones':
-        return Colors.blue;
+        return Color(0xFFB036FE);
       case 'Campañas':
-        return Colors.green;
+        return Color(0xFFDB2EB0);
       case 'Talleres':
-        return Colors.orange;
+        return Color(0xFF30A9F5);
       case 'Eventos Sociales':
-        return Colors.purple;
+        return Color(0xFF49B48D);
       case 'Asambleas':
-        return Colors.red;
+        return Color(0xFFE50F0F);
       case 'General':
-        return Colors.grey;
+        return Color(0xFF6630F5);
+      case 'general':
+        return Color(0xFF6630F5);
       default:
         return Colors.grey;
     }
@@ -809,7 +796,7 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
                     margin: EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                     child: TextField(
                       controller: _searchController,
@@ -850,7 +837,7 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
                             label: Text(
                               categoria,
                               style: TextStyle(
-                                color: Colors.white,
+                                color: categoria == 'Todas' ? Color(0xFF585758) : Colors.white,
                                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
@@ -961,15 +948,15 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Color(0xFF5C34A7).withOpacity(0.4),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: categoriaColor.withOpacity(0.3),
+          color: Color(0xFF6A6969),
           width: 1,
         ),
       ),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: EdgeInsets.all(30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -977,13 +964,15 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
             Row(
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: categoriaColor,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
-                    evento.categoria,
+                    evento.categoria.isNotEmpty 
+                        ? evento.categoria[0].toUpperCase() + evento.categoria.substring(1).toLowerCase()
+                        : evento.categoria,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
@@ -995,7 +984,7 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
                 Text(
                   _formatDate(evento.fechaInicio),
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Color(0xFF6E88A8),
                     fontSize: 14,
                   ),
                 ),
@@ -1008,7 +997,7 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
             Text(
               evento.titulo,
               style: TextStyle(
-                color: Colors.white,
+                color: Colors.black,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -1021,7 +1010,7 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
               Text(
                 evento.descripcion,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Color(0xFF6E88A8),
                   fontSize: 14,
                 ),
                 maxLines: 3,
@@ -1037,14 +1026,14 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
                 if (!evento.esTodoElDia && evento.fechaInicio != null) ...[
                   Icon(
                     Icons.access_time,
-                    color: Colors.white.withOpacity(0.6),
+                    color: Color(0xFF6E88A8),
                     size: 16,
                   ),
                   SizedBox(width: 4),
                   Text(
                     _formatTime(evento.fechaInicio),
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Color(0xFF6E88A8),
                       fontSize: 14,
                     ),
                   ),
@@ -1055,7 +1044,7 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
                 if (evento.ubicacion.isNotEmpty) ...[
                   Icon(
                     Icons.location_on,
-                    color: Colors.white.withOpacity(0.6),
+                    color: Color(0xFF6E88A8),
                     size: 16,
                   ),
                   SizedBox(width: 4),
@@ -1063,7 +1052,7 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
                     child: Text(
                       evento.ubicacion,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Color(0xFF6E88A8),
                         fontSize: 14,
                       ),
                       maxLines: 1,

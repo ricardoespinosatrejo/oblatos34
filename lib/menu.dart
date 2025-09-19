@@ -285,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
               Text(
-                'MENU NAV',
+                'MENU',
                 style: TextStyle(
                   fontFamily: 'Gryzensa',
                   fontSize: 35,

@@ -12,7 +12,7 @@ class HeaderNavigation extends StatelessWidget {
     Key? key,
     required this.onMenuTap,
     this.title = 'BIENVENIDOS',
-    this.subtitle = 'MENU NAV',
+    this.subtitle = 'MENU',
   }) : super(key: key);
 
   // Función para verificar si estamos en la página de perfil
