@@ -169,12 +169,15 @@ class _SnippetOverlayState extends State<SnippetOverlay>
     try {
       // Obtener el user_id del UserManager
       final userManager = Provider.of<UserManager>(context, listen: false);
-      final userId = userManager.currentUser?['id']?.toString();
+      final user = userManager.currentUser;
+      final userId = user?['id']?.toString();
       
-      if (userId == null) {
-        print('Error: No se pudo obtener el user_id');
+      if (userId == null || userId == '0') {
+        print('❌ No se puede otorgar puntos: usuario no logueado o user_id inválido (${user?['id']})');
         return;
       }
+      
+      print('🎯 Otorgando puntos de snippet para user_id: $userId');
       
       final response = await http.post(
         Uri.parse('https://zumuradigital.com/app-oblatos-login/add_snippet_points.php'),
@@ -188,17 +191,19 @@ class _SnippetOverlayState extends State<SnippetOverlay>
         }),
       );
       
+      print('🎯 Respuesta snippet: ${response.statusCode} - ${response.body}');
+      
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success']) {
-          print('Puntos agregados exitosamente: ${responseData['total_points']} puntos totales');
+          print('✅ Puntos de snippet agregados exitosamente: ${responseData['total_points']} puntos totales');
           // Actualizar los puntos en el UserManager
           userManager.updateUserPoints(responseData['total_points']);
         } else {
-          print('Error al agregar puntos: ${responseData['error']}');
+          print('❌ Error al agregar puntos de snippet: ${responseData['error']}');
         }
       } else {
-        print('Error al agregar puntos: ${response.statusCode}');
+        print('❌ Error HTTP agregando puntos de snippet: ${response.statusCode}');
       }
     } catch (e) {
       print('Error en la petición: $e');

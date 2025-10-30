@@ -19,3 +19,14 @@ ADD COLUMN IF NOT EXISTS puntos_diarios INT DEFAULT 0;
 
 
 
+
+
+
+
+
+
+
+
+
+
+

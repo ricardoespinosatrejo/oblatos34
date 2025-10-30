@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'inicio.dart'; // Para acceder a ProfileImageManager
 import 'widgets/header_navigation.dart'; // Para el HeaderNavigation reutilizable
-import 'widgets/submenu_widget.dart';
 
 class CajaScreen extends StatefulWidget {
   @override
@@ -19,6 +17,10 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
   
   // Audio player para el botón central
   final AudioPlayer _audioPlayer = AudioPlayer();
+  
+  // Audio player para la historia
+  final AudioPlayer _historiaAudioPlayer = AudioPlayer();
+  bool _isHistoriaAudioPlaying = false;
   
   @override
   void initState() {
@@ -40,10 +42,54 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
   }
   
   @override
+  void deactivate() {
+    // Detener el audio cuando la pantalla sale de vista
+    if (_isHistoriaAudioPlaying) {
+      _historiaAudioPlayer.stop();
+    }
+    super.deactivate();
+  }
+  
+  @override
   void dispose() {
+    // Detener y limpiar los audios antes de destruir el widget
+    _historiaAudioPlayer.stop();
+    _audioPlayer.stop();
     _submenuAnimationController.dispose();
     _audioPlayer.dispose();
+    _historiaAudioPlayer.dispose();
     super.dispose();
+  }
+  
+  // Método para manejar el audio de la historia
+  void _toggleHistoriaAudio() async {
+    if (_isHistoriaAudioPlaying) {
+      // Si está reproduciéndose, detenerlo
+      await _historiaAudioPlayer.stop();
+      setState(() {
+        _isHistoriaAudioPlaying = false;
+      });
+    } else {
+      // Si no está reproduciéndose, detener cualquier otro audio y reproducir este
+      await _audioPlayer.stop(); // Detener el audio del botón central si está activo
+      try {
+        await _historiaAudioPlayer.play(AssetSource('audios/audio1-historia.mp3'));
+        setState(() {
+          _isHistoriaAudioPlaying = true;
+        });
+        
+        // Escuchar cuando el audio termine para actualizar el estado
+        _historiaAudioPlayer.onPlayerComplete.listen((_) {
+          if (mounted) {
+            setState(() {
+              _isHistoriaAudioPlaying = false;
+            });
+          }
+        });
+      } catch (e) {
+        print('Error al reproducir audio: $e');
+      }
+    }
   }
 
   void _toggleSubmenu() async {
@@ -92,6 +138,13 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                   // Header de navegación reutilizable
                   HeaderNavigation(
                     onMenuTap: () {
+                      // Detener audio antes de navegar
+                      if (_isHistoriaAudioPlaying) {
+                        _historiaAudioPlayer.stop();
+                        setState(() {
+                          _isHistoriaAudioPlaying = false;
+                        });
+                      }
                       Navigator.pushNamed(context, '/menu');
                     },
                     title: 'BIENVENIDOS',
@@ -142,7 +195,16 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
 
   Widget _buildNavItem(String iconPath, String label, String route) {
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, route),
+      onTap: () {
+        // Detener audio antes de navegar
+        if (_isHistoriaAudioPlaying) {
+          _historiaAudioPlayer.stop();
+          setState(() {
+            _isHistoriaAudioPlaying = false;
+          });
+        }
+        Navigator.pushNamed(context, route);
+      },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -349,6 +411,36 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                           ),
                         ),
                       ),
+                      
+                      // Botón de audio en el espacio entre el borde izquierdo y la caja de texto
+                      Positioned(
+                        left: -5, // Entre el borde izquierdo (0) y el inicio de la caja de texto (left: 30)
+                        bottom: 60 + 160, // Centrado verticalmente con la caja de texto (bottom: 60, height: 320, centro = 60 + 160)
+                        child: GestureDetector(
+                          onTap: _toggleHistoriaAudio,
+                          child: Container(
+                            padding: EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _isHistoriaAudioPlaying 
+                                  ? Color(0xFFE91E63).withOpacity(0.3) 
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _isHistoriaAudioPlaying 
+                                    ? Color(0xFFE91E63) 
+                                    : Colors.transparent,
+                                width: 2,
+                              ),
+                            ),
+                            child: Image.asset(
+                              'assets/audios/audio1-historia.png',
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -538,6 +630,13 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                       children: [
                         GestureDetector(
                           onTap: () {
+                            // Detener audio antes de navegar
+                            if (_isHistoriaAudioPlaying) {
+                              _historiaAudioPlayer.stop();
+                              setState(() {
+                                _isHistoriaAudioPlaying = false;
+                              });
+                            }
                             Navigator.pushNamed(context, '/juego');
                           },
                           child: Image.asset(
@@ -548,6 +647,13 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                         SizedBox(width: 9),
                         GestureDetector(
                           onTap: () {
+                            // Detener audio antes de navegar
+                            if (_isHistoriaAudioPlaying) {
+                              _historiaAudioPlayer.stop();
+                              setState(() {
+                                _isHistoriaAudioPlaying = false;
+                              });
+                            }
                             Navigator.pushNamed(context, '/calculadora');
                           },
                           child: Image.asset(

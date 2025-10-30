@@ -218,20 +218,12 @@ class _InicioPageState extends State<InicioPage> {
           if (responseData['usuario'] != null) {
             userManager.setCurrentUser(responseData['usuario']);
           } else {
-            // Si no, crear un usuario temporal con los datos del formulario
-            final Map<String, dynamic> tempUser = {
-              'id': responseData['user_id'] ?? 0,
-              'nombre_usuario': _usuarioController.text.trim(),
-              'nombre_menor': _nombreCompletoController.text.trim(),
-              'rango_edad': _selectedRangoEdad,
-              'nombre_padre_madre': _nombrePadreMadreController.text.trim(),
-              'email': _emailController.text.trim(),
-              'telefono': _telefonoController.text.trim(),
-              'puntos': 0, // Usuario nuevo empieza con 0 puntos
-              'profile_image': 1, // Imagen por defecto
-            };
-            userManager.setCurrentUser(tempUser);
+            // Si no devuelve el usuario completo, intentar hacer login para obtener datos completos
+            await _loginAfterRegistration(_usuarioController.text.trim(), _passwordController.text, userManager);
           }
+          
+          // NUEVO: Otorgar puntos de sesión diaria a usuarios nuevos desde el primer registro
+          await _actualizarSesionDiaria(userManager);
           
           // Reanudar snippets y navegar al menú
           try { SnippetService().setGameOrCalculatorActive(false); } catch (_) {}
@@ -273,11 +265,62 @@ class _InicioPageState extends State<InicioPage> {
     }
   }
 
+  // Login automático después del registro para obtener datos completos
+  Future<void> _loginAfterRegistration(String username, String password, UserManager userManager) async {
+    try {
+      final Map<String, dynamic> loginData = {
+        'nombre_usuario': username,
+        'password': password,
+      };
+
+      final response = await http.post(
+        Uri.parse('https://zumuradigital.com/app-oblatos-login/login.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(loginData),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        
+        if (responseData['success'] == true && responseData['usuario'] != null) {
+          // Guardar información completa del usuario
+          userManager.setCurrentUser(responseData['usuario']);
+          print('✅ Usuario registrado y datos completos obtenidos: ${responseData['usuario']['id']}');
+        } else {
+          print('❌ Error obteniendo datos completos después del registro');
+          // Crear usuario temporal como fallback
+          final Map<String, dynamic> tempUser = {
+            'id': 0, // Esto causará problemas, pero es mejor que nada
+            'nombre_usuario': username,
+            'puntos': 0,
+            'profile_image': 1,
+          };
+          userManager.setCurrentUser(tempUser);
+        }
+      }
+    } catch (e) {
+      print('❌ Error en login automático después del registro: $e');
+      // Crear usuario temporal como fallback
+      final Map<String, dynamic> tempUser = {
+        'id': 0, // Esto causará problemas, pero es mejor que nada
+        'nombre_usuario': username,
+        'puntos': 0,
+        'profile_image': 1,
+      };
+      userManager.setCurrentUser(tempUser);
+    }
+  }
+
   // Actualizar sesión diaria automáticamente
   Future<void> _actualizarSesionDiaria(UserManager userManager) async {
     try {
       final user = userManager.currentUser;
-      if (user == null || user['id'] == null) return;
+      if (user == null || user['id'] == null || user['id'] == 0) {
+        print('❌ No se puede actualizar sesión diaria: user_id inválido (${user?['id']})');
+        return;
+      }
+
+      print('🎯 Intentando actualizar sesión diaria para user_id: ${user['id']}');
 
       // Llamar al backend para actualizar sesión diaria
       final response = await http.post(
@@ -289,13 +332,22 @@ class _InicioPageState extends State<InicioPage> {
         }),
       );
 
+      print('🎯 Respuesta sesión diaria: ${response.statusCode} - ${response.body}');
+
       if (response.statusCode == 200) {
-        // Actualizar UserManager con los nuevos datos
-        userManager.updateSesionDiaria();
-        print('✅ Sesión diaria actualizada automáticamente al login');
+        final responseData = jsonDecode(response.body);
+        if (responseData['success'] == true) {
+          // Actualizar UserManager con los nuevos datos
+          userManager.updateSesionDiaria();
+          print('✅ Sesión diaria actualizada automáticamente - puntos: ${responseData['data']['puntos']}');
+        } else {
+          print('❌ Error en respuesta de sesión diaria: ${responseData['error']}');
+        }
+      } else {
+        print('❌ Error HTTP actualizando sesión diaria: ${response.statusCode}');
       }
     } catch (e) {
-      print('❌ Error actualizando sesión diaria al login: $e');
+      print('❌ Error actualizando sesión diaria: $e');
     }
   }
 

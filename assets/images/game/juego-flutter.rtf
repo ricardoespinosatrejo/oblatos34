@@ -1,0 +1,239 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww40600\viewh23540\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs42 \cf0 ## 1. Par\'e1metros Globales del Juego\
+\
+### Dimensiones y Proporciones\
+- **Tama\'f1o canvas**: 400px ancho x 700px alto (relaci\'f3n 4:7)\
+- **Proporci\'f3n alcanc\'eda**: 200:380 (relaci\'f3n 10:19)\
+- **Tama\'f1o inicial alcanc\'eda**: 0.5x (100px ancho x 190px alto)\
+- **Tama\'f1o con escudo**: 0.6x (120px ancho x 228px alto)\
+- **Posici\'f3n base alcanc\'eda**: 25px por encima del borde inferior\
+\
+### Sistema de Vidas\
+- **Vidas iniciales**: 3\
+- **M\'e1ximo de vidas**: 6\
+- **Vidas ocultas**: Solo se muestran las vidas activas (no se muestran las extras hasta que se obtienen)\
+- **Efecto visual al perder vida**: Sacudida (150ms)\
+\
+## 2. Sistema de Niveles\
+\
+### Par\'e1metros por Nivel\
+| Nivel | Condici\'f3n de Subida | Velocidad Base | Intervalo Negativos | Proporci\'f3n Monedas | Objetos M\'e1ximos | Frecuencia Base | Estrellas |\
+|-------|---------------------|----------------|---------------------|--------------------|-----------------|-----------------|-----------|\
+| 1 (F\'e1cil) | 500 puntos | 4 | 8000ms | 85% | 3 | 2.5 | 0% |\
+| 2 (Normal) | 1000 puntos | 5 | 5000ms | 65% | 3 | 1.8 | 5% |\
+| 3 (Dif\'edcil) | 1500 puntos | 6 | 3500ms | 55% | 4 | 1.5 | 5% |\
+| 4 (Experto) | 2000 puntos | 7 | 3000ms | 45% | 5 | 1.3 | 5% |\
+| 5 (Maestro) | - | 8 | 2500ms | 35% | 6 | 1.2 | 5% |\
+\
+### Reglas de Progresi\'f3n\
+- **Puntos para subir de nivel**: \
+  - Nivel 1: 500 puntos\
+  - Nivel 2: 1000 puntos\
+  - Nivel 3: 1500 puntos\
+  - Nivel 4: 2000 puntos\
+  - Nivel 5: Modo final de 60 segundos\
+- **Transici\'f3n de nivel**: 2 segundos con mensaje y fondo semitransparente\
+\
+## 3. Mec\'e1nicas Principales\
+\
+### Sistema de Monedas y Objetos\
+- **Tipos de monedas**:\
+  - Oro: 10 puntos (imagen: assets/images/game/moneda_oro.png)\
+  - Plata: 5 puntos (imagen: assets/images/game/moneda_plata.png)\
+  - Cobre: 1 punto (imagen: assets/images/game/moneda_cobre.png)\
+  - Bonus (solo nivel 5): 50 puntos (imagen: assets/images/game/moneda_oro.png, tama\'f1o 20% mayor)\
+  \
+- **Objetos negativos**:\
+  - Tarjeta mala 1, 2, 3 (imagen: assets/images/game/tarjeta_mala01/02/03.png)\
+  - Cada una resta 1 vida al contacto sin escudo\
+\
+- **Estrellas de vida extra**:\
+  - Imagen: assets/images/game/vida.png\
+  - Aparecen desde nivel 2\
+  - Probabilidad: 5% (ajustable por nivel)\
+  - Posici\'f3n: Centradas (\'b120px del centro)\
+  - Efecto: +1 vida (m\'e1ximo 6 vidas)\
+\
+### Sistema de Escudo y Efectos\
+- **Activaci\'f3n**: Cada 10 monedas recolectadas\
+- **Duraci\'f3n**: 3 segundos\
+- **Efectos visuales**:\
+  - Halo de protecci\'f3n (gradiente radial)\
+  - Texto "PROTEGIDO" arriba de la alcanc\'eda\
+  - Agrandamiento del 20% (de 0.5x a 0.6x)\
+  - Vibraci\'f3n (amplitud 3px, frecuencia variable)\
+  - Protecci\'f3n contra objetos negativos\
+\
+### Sistema de Colisiones\
+- **C\'e1lculo**: Rect\'e1ngulos de colisi\'f3n basados en tama\'f1o actual\
+- **Precisi\'f3n**: \
+  - Alcanc\'eda: 200x380 (escalado)\
+  - Monedas: 13% del ancho del canvas\
+  - Estrellas: 13% del ancho del canvas\
+  - Bonus: 20% del ancho del canvas\
+\
+## 4. Sistema de Controles\
+\
+### Mecanismos de Movimiento\
+- **Rat\'f3n/Touch**:\
+  - Direcci\'f3n calculada por movimiento relativo\
+  - Umbral de direcci\'f3n: 5px de movimiento\
+  - Direcci\'f3n persistente hasta cambio de movimiento\
+  - Posici\'f3n: centrado en el punto de contacto\
+\
+### Direcci\'f3n Visual\
+- **Izquierda**: Alcanc\'eda invertida horizontalmente (scaleX: -1)\
+- **Derecha**: Alcanc\'eda en orientaci\'f3n normal (scaleX: 1)\
+\
+## 5. Efectos Visuales y Sonoros\
+\
+### Efectos Visuales\
+- **Part\'edculas**: \
+  - 6 part\'edculas por moneda recolectada\
+  - Tama\'f1o: 12px\
+  - Duraci\'f3n: 1 segundo\
+  - Movimiento: Con gravedad y rotaci\'f3n\
+\
+- **Textos Flotantes**:\
+  - Duraci\'f3n: 1.5 segundos\
+  - Movimiento: Ascendente con aceleraci\'f3n\
+  - Tipos: \
+    - "+[puntos]" (colores seg\'fan moneda)\
+    - "-1 Vida" (rojo)\
+    - "+1 Vida!" (amarillo)\
+    - "+50!" (amarillo, durante efecto de escudo)\
+\
+- **Fondo Paralaje**:\
+  - Factor de paralaje: 0.3\
+  - Movimiento basado en velocidad de la alcanc\'eda\
+\
+### Sistema de Sonido\
+| Evento | Archivo | Volumen | Notas |\
+|--------|---------|---------|-------|\
+| Moneda | assets/images/game/sounds/coin.mp3 | 0.7 | Reproduce al recolectar |\
+| Error | error.mp3 | 0.8 | Al chocar con negativo |\
+| Game Over | gameover.mp3 | 0.9 | Al terminar el juego |\
+| M\'fasica | assets/images/game/sounds/music.mp3 | 0.5 | Loop durante el juego |\
+| Bonus | assets/images/game/sounds/bonus.mp3 | 0.8 | Al activar escudo |\
+| Estrella | assets/images/game/sounds/star.mp3 | 0.9 | Al obtener vida extra |\
+| Contador | assets/images/game/sounds/countdown.mp3 | 0.6 | Solo \'faltimos 10s del nivel 5 |\
+\
+## 6. Estados del Juego\
+\
+| Estado | Descripci\'f3n | Acciones Permitidas |\
+|--------|-------------|---------------------|\
+| start | Pantalla de inicio | Iniciar juego |\
+| playing | Juego en curso | Mover alcanc\'eda |\
+| levelTransition | Transici\'f3n de nivel | Esperar 2 segundos |\
+| gameOver | Fin del juego | Reiniciar |\
+\
+## 7. Recursos Necesarios\
+\
+### Im\'e1genes\
+- **Fondos**: \
+  - assets/images/game/fondo2.jpg (juego)\
+  - assets/images/game/portada.jpg (inicio)\
+  - assets/images/game/portada2.jpg (game over)\
+  \
+- **Elementos**:\
+  - assets/images/game/alcancia.png\
+  - assets/images/game/moneda_oro.png\
+  - assets/images/game/moneda_plata.png\
+  - assets/images/game/moneda_cobre.png\
+  - assets/images/game/tarjeta_mala01.png\
+  - assets/images/game/tarjeta_mala02.png\
+  - assets/images/game/tarjeta_mala03.png\
+  - assets/images/game/vida.png (tanto para vidas como estrellas)\
+\
+- **Botones**:\
+  - assets/images/game/boton_jugar.png\
+  - assets/images/game/boton_reintentar.png\
+\
+### Sonidos\
+- Todos los archivos .mp3 listados en el sistema de sonido\
+\
+## 8. Par\'e1metros T\'e9cnicos para Flutter\
+\
+### Estructura de Datos Recomendada\
+```dart\
+// Configuraci\'f3n por nivel\
+class LevelConfig \{\
+  final int level;\
+  final int pointsToNext;\
+  final double speedBase;\
+  final int negativeInterval;\
+  final double coinRatio;\
+  final int maxObjects;\
+  final double frequencyMultiplier;\
+  final double starChance;\
+\}\
+\
+// Tipos de objetos\
+enum ObjectType \{ gold, silver, copper, negative1, negative2, negative3, bonus, star \}\
+\
+// Objeto en juego\
+class GameObject \{\
+  final String id;\
+  final double x;\
+  final double y;\
+  final ObjectType type;\
+  final int points;\
+  final String image;\
+  final double speed;\
+  final double rotation;\
+  final double rotationSpeed;\
+\}\
+\
+// Sistema de part\'edculas\
+class Particle \{\
+  final String id;\
+  final double x;\
+  final double y;\
+  final double vx;\
+  final double vy;\
+  final String image;\
+  final double life;\
+  final double size;\
+  final double rotation;\
+  final double rotationSpeed;\
+\}\
+\
+// Textos flotantes\
+class FloatingText \{\
+  final String id;\
+  final double x;\
+  final double y;\
+  final String text;\
+  final String color;\
+  final double vy;\
+  final double life;\
+  final double rotation;\
+\}\
+```\
+\
+### Implementaci\'f3n Recomendada en Flutter\
+1. **Motor de juego**: Usar `flame` o `sprite_widget` para el sistema de juego\
+2. **Gesti\'f3n de estado**: Provider o Bloc para el estado del juego\
+3. **Animaciones**: \
+   - `AnimationController` para efectos de vibraci\'f3n\
+   - `Transform` para escalamiento y rotaci\'f3n\
+   - `CustomPaint` para dibujar part\'edculas\
+4. **Sonido**: `audioplayers` package para gesti\'f3n de sonidos\
+5. **Detecci\'f3n de colisiones**: \
+   - `Hitbox` en flame\
+   - O c\'e1lculo manual con rect\'e1ngulos\
+\
+### Consideraciones Espec\'edficas para Flutter\
+- Usar `LayoutBuilder` para manejar dimensiones responsivas\
+- Implementar `GestureDetector` para controles t\'e1ctiles\
+- Usar `AnimationController` para transiciones suaves\
+- Implementar sistema de part\'edculas con `CustomPainter`\
+- Manejar estado del juego con un enfoque orientado a componentes\
+- Optimizar recursos con `AssetBundle` para carga eficiente\
+}

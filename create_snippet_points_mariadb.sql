@@ -20,3 +20,14 @@ ALTER TABLE usuarios ADD COLUMN puntos_diarios INT DEFAULT 0;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
