@@ -29,6 +29,37 @@ class LevelConfig {
   });
 }
 
+class _FloatingTextEvent {
+  final String text;
+  final Color color;
+  final DateTime createdAt;
+  final int durationMs;
+  _FloatingTextEvent({
+    required this.text,
+    required this.color,
+    required this.createdAt,
+  }) : durationMs = 1200;
+}
+
+class _Particle {
+  double xPx;
+  double yPx;
+  double vxPx;
+  double vyPx;
+  double lifeMs; // vida restante en ms
+  double sizePx;
+  int kind; // 1 cobre, 2 plata, 3 oro
+  _Particle({
+    required this.xPx,
+    required this.yPx,
+    required this.vxPx,
+    required this.vyPx,
+    required this.lifeMs,
+    required this.sizePx,
+    required this.kind,
+  });
+}
+
 class GameScreen extends StatefulWidget {
   @override
   _GameScreenState createState() => _GameScreenState();
@@ -43,12 +74,13 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   bool _gameOver = false;
   bool _isLevelUpAnimating = false; // Bandera para evitar animaciones duplicadas
   int _coinsCollected = 0; // Contador de monedas recolectadas
+  int _pointsSinceShield = 0; // Puntos acumulados desde último escudo
   final Map<int, LevelConfig> _levelConfigs = {
-    1: LevelConfig(pointsToNext: 500, speedBase: 4, negativeIntervalMs: 8000, coinRatio: 0.85, maxObjects: 3, frequencyBaseSeconds: 2.5, starChance: 0.0),
-    2: LevelConfig(pointsToNext: 1000, speedBase: 5, negativeIntervalMs: 5000, coinRatio: 0.65, maxObjects: 3, frequencyBaseSeconds: 1.8, starChance: 0.05),
-    3: LevelConfig(pointsToNext: 1500, speedBase: 6, negativeIntervalMs: 3500, coinRatio: 0.55, maxObjects: 4, frequencyBaseSeconds: 1.5, starChance: 0.05),
-    4: LevelConfig(pointsToNext: 2000, speedBase: 7, negativeIntervalMs: 3000, coinRatio: 0.45, maxObjects: 5, frequencyBaseSeconds: 1.3, starChance: 0.05),
-    5: LevelConfig(pointsToNext: 0,    speedBase: 8, negativeIntervalMs: 2500, coinRatio: 0.35, maxObjects: 6, frequencyBaseSeconds: 1.2, starChance: 0.05),
+    1: LevelConfig(pointsToNext: 100,  speedBase: 4, negativeIntervalMs: 8000, coinRatio: 0.85, maxObjects: 3, frequencyBaseSeconds: 2.5, starChance: 0.0),
+    2: LevelConfig(pointsToNext: 400,  speedBase: 5, negativeIntervalMs: 5000, coinRatio: 0.65, maxObjects: 3, frequencyBaseSeconds: 1.8, starChance: 0.05),
+    3: LevelConfig(pointsToNext: 1000, speedBase: 6, negativeIntervalMs: 3500, coinRatio: 0.40, maxObjects: 4, frequencyBaseSeconds: 1.3, starChance: 0.05),
+    4: LevelConfig(pointsToNext: 1500, speedBase: 7, negativeIntervalMs: 2800, coinRatio: 0.25, maxObjects: 6, frequencyBaseSeconds: 1.0, starChance: 0.03),
+    5: LevelConfig(pointsToNext: 0,    speedBase: 8, negativeIntervalMs: 2200, coinRatio: 0.20, maxObjects: 7, frequencyBaseSeconds: 0.9, starChance: 0.0),
   };
 
   LevelConfig get _currentLevelConfig {
@@ -70,6 +102,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   // Audio players
   final AudioPlayer _musicPlayer = AudioPlayer();
   final AudioPlayer _soundPlayer = AudioPlayer();
+  String _currentMusic = 'music.mp3';
   
   // Timer para el juego
   Timer? _gameTimer;
@@ -96,6 +129,17 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   late AnimationController _shakeController;
   double _shakeDx = 0.0;
   DateTime? _damageTintUntil;
+  final List<_FloatingTextEvent> _floatingTexts = [];
+  Timer? _shieldShakeTimer;
+  int _coinSoundIdx = 0; // 0..2 ciclo de sonidos de moneda
+  final List<_Particle> _particles = [];
+  bool _showRanking = false;
+  bool _loadingRanking = false;
+  List<dynamic> _top10 = [];
+  String? _currentUsername;
+  int _pointsSinceStar = 0; // Contador para aparición de estrella (nivel 3)
+
+  
   
   @override
   void initState() {
@@ -146,16 +190,54 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         if (mounted) setState(() {});
       });
   }
+
+  void _spawnCoinParticles(int kind) {
+    final size = MediaQuery.of(context).size;
+    final double cx = size.width * _playerX;
+    final double cy = size.height - 30 - (380 * _playerScale) + (380 * _playerScale) * 0.2; // cerca de la "boca"
+    for (int i = 0; i < 10; i++) {
+      final angle = math.Random().nextDouble() * 2 * math.pi;
+      final speed = 90 + math.Random().nextDouble() * 140; // px/s
+      final vx = math.cos(angle) * speed;
+      final vy = -math.sin(angle) * speed; // arriba preferente
+      final life = 700 + math.Random().nextDouble() * 500; // 0.7s..1.2s
+      final sz = 14 + math.Random().nextDouble() * 10;
+      _particles.add(_Particle(
+        xPx: cx,
+        yPx: cy - 90, // subir 90px el origen
+        vxPx: vx,
+        vyPx: vy,
+        lifeMs: life,
+        sizePx: sz,
+        kind: kind,
+      ));
+    }
+  }
   
   void _playBackgroundMusic() async {
     try {
       print('Intentando reproducir música de fondo...');
-      await _musicPlayer.play(AssetSource('images/game/sounds/music.mp3'));
-      await _musicPlayer.setReleaseMode(ReleaseMode.loop);
+      await _setBackgroundMusicForLevel(force: true);
       print('Música de fondo iniciada correctamente');
     } catch (e) {
       print('Error playing background music: $e');
     }
+  }
+
+  Future<void> _playBackgroundTrack(String fileName) async {
+    if (_currentMusic == fileName) return;
+    _currentMusic = fileName;
+    await _musicPlayer.stop();
+    await _musicPlayer.play(AssetSource('images/game/sounds/' + fileName));
+    await _musicPlayer.setReleaseMode(ReleaseMode.loop);
+  }
+
+  Future<void> _setBackgroundMusicForLevel({bool force = false}) async {
+    final String desired = (_level >= 4) ? 'music2.mp3' : 'music.mp3';
+    if (force) {
+      _currentMusic = ''; // fuerza cambio
+    }
+    await _playBackgroundTrack(desired);
   }
   
   void _playSound(String sound) async {
@@ -165,6 +247,22 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       print('Sonido $sound reproducido correctamente');
     } catch (e) {
       print('Error playing sound $sound: $e');
+    }
+  }
+
+  Future<void> _playCoinCycled() async {
+    final List<String> cycle = ['coin.mp3', 'coin2.mp3', 'coin3.mp3'];
+    final String candidate = cycle[_coinSoundIdx % cycle.length];
+    _coinSoundIdx = (_coinSoundIdx + 1) % cycle.length;
+    try {
+      await _soundPlayer.play(AssetSource('images/game/sounds/$candidate'));
+    } catch (_) {
+      // Si no existe coin2/coin3, caer a coin.mp3
+      try {
+        await _soundPlayer.play(AssetSource('images/game/sounds/coin.mp3'));
+      } catch (e) {
+        print('Error fallback coin.mp3: $e');
+      }
     }
   }
   
@@ -185,6 +283,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     });
     
     _startGameLoop();
+    _setBackgroundMusicForLevel();
   }
   
   void _startGameLoop() {
@@ -213,6 +312,24 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       
       // Verificar colisiones
       _checkCollisions();
+
+      // Limpiar textos flotantes expirados
+      final now = DateTime.now();
+      _floatingTexts.removeWhere((t) => now.difference(t.createdAt).inMilliseconds > t.durationMs);
+
+      // Actualizar partículas
+      final double dt = 16; // ms por tick
+      for (int i = _particles.length - 1; i >= 0; i--) {
+        final p = _particles[i];
+        // gravedad ligera
+        p.vyPx += 400 * (dt / 1000);
+        p.xPx += p.vxPx * (dt / 1000);
+        p.yPx += p.vyPx * (dt / 1000);
+        p.lifeMs -= dt;
+        if (p.lifeMs <= 0) {
+          _particles.removeAt(i);
+        }
+      }
     });
   }
   
@@ -222,8 +339,27 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     // Respetar máximo de objetos simultáneos
     if (_elements.length >= _currentLevelConfig.maxObjects) return;
 
-    // Posible estrella (desde nivel 2)
-    if (_level >= 2 && math.Random().nextDouble() < _currentLevelConfig.starChance) {
+    // Estrella: reglas especiales en nivel 3 por puntos acumulados (cada 200)
+    if (_level == 3 && _pointsSinceStar >= 200) {
+      final double screenWidth = MediaQuery.of(context).size.width;
+      final double dxNorm = (120.0 / screenWidth).clamp(0.0, 0.5);
+      final double offsetNorm = (random.nextDouble() * 2 - 1) * dxNorm;
+      _elements.add(
+        GameElement(
+          x: (0.5 + offsetNorm).clamp(0.0, 1.0),
+          y: -0.1,
+          type: 'star',
+          value: 0,
+          vy: _computeElementVy(),
+          rotation: 0,
+          rotationSpeed: 0,
+        ),
+      );
+      _pointsSinceStar = 0;
+      return;
+    }
+    // Estrella aleatoria normal para otros niveles (2 y 4), no nivel 5
+    if (_level >= 2 && _level < 5 && _level != 3 && math.Random().nextDouble() < _currentLevelConfig.starChance) {
       final double screenWidth = MediaQuery.of(context).size.width;
       final double dxNorm = (120.0 / screenWidth).clamp(0.0, 0.5);
       final double offsetNorm = (random.nextDouble() * 2 - 1) * dxNorm;
@@ -241,21 +377,22 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       return;
     }
 
-    // Proporción de monedas vs negativos según nivel con intervalo mínimo
-    bool spawnCoin = random.nextDouble() < _currentLevelConfig.coinRatio;
-    String elementType = spawnCoin ? 'coin' : 'bad_card';
-    if (elementType == 'bad_card') {
-      final now = DateTime.now();
-      if (_lastNegativeSpawn != null && now.difference(_lastNegativeSpawn!).inMilliseconds < _currentLevelConfig.negativeIntervalMs) {
-        elementType = 'coin';
-      } else {
-        _lastNegativeSpawn = now;
+    // Función para decidir tipo por ratio + intervalo negativo
+    String chooseType() {
+      bool spawnCoin = random.nextDouble() < _currentLevelConfig.coinRatio;
+      String t = spawnCoin ? 'coin' : 'bad_card';
+      if (t == 'bad_card') {
+        final now = DateTime.now();
+        if (_lastNegativeSpawn != null && now.difference(_lastNegativeSpawn!).inMilliseconds < _currentLevelConfig.negativeIntervalMs) {
+          t = 'coin';
+        } else {
+          _lastNegativeSpawn = now;
+        }
       }
-    }
-
-    // Bonus (solo nivel 5): 50 puntos, tamaño 20% ancho
-    if (_level >= 5 && elementType == 'coin' && random.nextDouble() < 0.15) {
-      elementType = 'bonus';
+    if (_level >= 5 && t == 'coin' && random.nextDouble() < 0.15) {
+        t = 'bad_big';
+      }
+      return t;
     }
 
     void spawnOne(String t) {
@@ -264,26 +401,28 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           x: random.nextDouble(),
           y: -0.1,
           type: t,
-          value: t == 'coin' ? (random.nextInt(3) + 1) : (t == 'bonus' ? 50 : -1),
+          // Para negativos, guardamos subtipo 1..3 en value; para bad_big usar 1 (tarjeta_mala01)
+          value: t == 'coin' ? (random.nextInt(3) + 1) : (t == 'bad_big' ? 1 : (random.nextInt(3) + 1)),
           vy: _computeElementVy(),
           rotation: 0,
-          rotationSpeed: t == 'coin' || t == 'bonus' ? _randomRotationSpeed() : 0,
+          rotationSpeed: t == 'coin' ? _randomRotationSpeed() : (_randomRotationSpeed() * 0.3),
         ),
       );
     }
 
-    // Spawns simultáneos: a veces dos monedas con velocidades distintas
-    spawnOne(elementType);
-    if (elementType == 'coin' && random.nextDouble() < 0.3 && _elements.length < _currentLevelConfig.maxObjects) {
-      spawnOne('coin');
-    }
-
-    // Ocasionalmente añade un negativo si no se agregó y hay espacio y respeta intervalo
-    if (elementType != 'bad_card' && random.nextDouble() < 0.25 && _elements.length < _currentLevelConfig.maxObjects) {
-      final now = DateTime.now();
-      if (_lastNegativeSpawn == null || now.difference(_lastNegativeSpawn!).inMilliseconds >= _currentLevelConfig.negativeIntervalMs) {
-        _lastNegativeSpawn = now;
-        spawnOne('bad_card');
+    if (_level >= 3) {
+      // A partir del nivel 3: siempre spawnear 2-4 elementos simultáneos
+      final int space = _currentLevelConfig.maxObjects - _elements.length;
+      if (space <= 0) return;
+      final int count = math.min(space, 2 + random.nextInt(3)); // 2..4
+      for (int i = 0; i < count; i++) {
+        spawnOne(chooseType());
+      }
+    } else {
+      // Niveles 1-2: comportamiento más ligero
+      spawnOne(chooseType());
+      if (random.nextDouble() < 0.3 && _elements.length < _currentLevelConfig.maxObjects) {
+        spawnOne(chooseType());
       }
     }
   }
@@ -307,6 +446,14 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       playerWidthPx,
       playerHeightPx,
     );
+    // Zona sensible: franja superior del personaje (p. ej. "boca" de la alcancía)
+    // Nota: usaremos una banda delgada, no el 25% superior completo
+    // Afinar a la "cabeza/boca": subir más y estrechar banda y ancho
+    final double topSensitiveY = math.max(0.0, playerRect.top - 60); // subir ~60px respecto al top calculado
+    final double collisionBand = 8.0; // banda delgada
+    final double sensitiveWidth = playerWidthPx * 0.6; // 60% centrado
+    final double sensitiveLeft = playerCenterX - (sensitiveWidth / 2);
+    final double sensitiveRight = playerCenterX + (sensitiveWidth / 2);
 
     for (int i = _elements.length - 1; i >= 0; i--) {
       final element = _elements[i];
@@ -322,7 +469,12 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         elemSizePx,
       );
 
-      if (playerRect.overlaps(elemRect)) {
+      // Colisión cuando el borde inferior del objeto toca la franja superior del jugador
+      final bool horizontalOverlap =
+          (elemRect.right >= sensitiveLeft) && (elemRect.left <= sensitiveRight);
+      final bool verticalTouch =
+          (elemRect.bottom >= topSensitiveY) && (elemRect.top <= topSensitiveY + collisionBand);
+      if (horizontalOverlap && verticalTouch) {
         if (element.type == 'coin') {
           // Puntajes diferentes por tipo de moneda (1/5/10)
           int points = 0;
@@ -338,20 +490,57 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               break;
           }
           _score += points;
+          _pointsSinceShield += points;
+          _pointsSinceStar += points;
           _coinsCollected++; // Incrementar contador de monedas
           coinCollected = true; // Marcar que se recolectó una moneda
-          if (_coinsCollected % 10 == 0 && !_shieldActive) {
+          _spawnCoinParticles(element.value);
+          // Activación de escudo por puntos acumulados
+          // Nivel 3: cada 100; Niveles >=4: cada 200; Niveles 1-2: cada 50. Desactivado en nivel 5.
+          final int shieldThreshold = (_level >= 4) ? 200 : (_level == 3 ? 100 : 50);
+          if (_level < 5 && _pointsSinceShield >= shieldThreshold && !_shieldActive) {
+            _pointsSinceShield = 0;
             _activateShield();
           }
+          // Texto flotante de puntos
+          Color ptsColor;
+          switch (element.value) {
+            case 3:
+              ptsColor = Color(0xFFFFD700); // Oro
+              break;
+            case 2:
+              ptsColor = Color(0xFFC0C0C0); // Plata
+              break;
+            default:
+              ptsColor = Color(0xFFCD7F32); // Cobre
+          }
+          _floatingTexts.add(_FloatingTextEvent(
+            text: '+$points',
+            color: ptsColor,
+            createdAt: DateTime.now(),
+          ));
         } else if (element.type == 'star') {
           if (_lives < 6) {
             _lives++;
           }
           _playSound('star.mp3');
-        } else if (element.type == 'bonus') {
-          _score += 50;
-          _playSound('star.mp3');
-          _bonusTextUntil = DateTime.now().add(Duration(milliseconds: 1500));
+          _shakeController.forward(from: 0);
+          _pointsSinceStar = 0; // reset contador estrella
+          _floatingTexts.add(_FloatingTextEvent(
+            text: '+1 Vida!',
+            color: Colors.yellowAccent,
+            createdAt: DateTime.now(),
+          ));
+        } else if (element.type == 'bad_big') {
+          // Tarjeta mala grande: -50 puntos y también quita 1 vida (si no hay escudo)
+          if (!_shieldActive) {
+            _score = math.max(0, _score - 50);
+            _floatingTexts.add(_FloatingTextEvent(
+              text: '-50',
+              color: Colors.redAccent,
+              createdAt: DateTime.now(),
+            ));
+          }
         } else {
           if (!_shieldActive) {
             _lives--;
@@ -359,6 +548,11 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
             HapticFeedback.mediumImpact();
             _shakeController.forward(from: 0);
             _damageTintUntil = DateTime.now().add(Duration(milliseconds: 320));
+            _floatingTexts.add(_FloatingTextEvent(
+              text: '-1',
+              color: Colors.redAccent,
+              createdAt: DateTime.now(),
+            ));
             if (_lives <= 0) {
               _gameOver = true;
               _playSound('gameover.mp3');
@@ -382,7 +576,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     
     // Reproducir sonido de moneda fuera del bucle para evitar conflictos
     if (coinCollected) {
-      _playSound('coin.mp3');
+      _playCoinCycled();
     }
     
     // Mostrar animación de nivel fuera del bucle para evitar duplicados
@@ -394,18 +588,35 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   void _activateShield() {
     _shieldActive = true;
     _playerScale = 0.6; // agrandamiento 20%
-    _playSound('star.mp3');
+    // Usar one-shot para no competir con otros SFX
+    _playOneShot('bonus.mp3');
     _shieldTimer?.cancel();
-    _shieldUntil = DateTime.now().add(Duration(seconds: 10));
-    _shieldTimer = Timer(Duration(seconds: 10), () {
+    _shieldUntil = DateTime.now().add(Duration(seconds: 6));
+    _shieldTimer = Timer(Duration(seconds: 6), () {
       if (!mounted) return;
       setState(() {
         _shieldActive = false;
         _playerScale = 0.5;
         _shieldUntil = null;
+        _shieldShakeTimer?.cancel();
       });
     });
+    // Temblores mientras dura el escudo
+    _shieldShakeTimer?.cancel();
+    _shieldShakeTimer = Timer.periodic(Duration(milliseconds: 320), (_) {
+      if (!_shieldActive) return;
+      _shakeController.forward(from: 0);
+    });
     setState(() {});
+  }
+
+  Future<void> _playOneShot(String sound) async {
+    try {
+      final player = AudioPlayer();
+      await player.play(AssetSource('images/game/sounds/$sound'));
+    } catch (e) {
+      print('One-shot failed: $e');
+    }
   }
   
   void _showLevelUpAnimation() {
@@ -438,6 +649,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         if (_level >= 5) {
           _startLevel5Timer();
         }
+        _setBackgroundMusicForLevel();
       });
     });
   }
@@ -470,10 +682,10 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   
   int _getRequiredPointsForLevel(int level) {
     switch (level) {
-      case 1: return 500;
-      case 2: return 1000;
-      case 3: return 1500;
-      case 4: return 2000;
+      case 1: return 100;   // 1 → 2
+      case 2: return 400;   // 2 → 3
+      case 3: return 1000;  // 3 → 4
+      case 4: return 1500;  // 4 → 5
       default: return 1 << 30; // Nivel 5+: sin siguiente por ahora (modo final se implementará luego)
     }
   }
@@ -503,6 +715,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     _gameTimer?.cancel();
     _spawnTimer?.cancel();
     _saveScore();
+    // Volver a música base al terminar juego
+    _playBackgroundTrack('music.mp3');
   }
   
   void _saveScore() async {
@@ -554,6 +768,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     _gameTimer?.cancel();
     _spawnTimer?.cancel();
     _shieldTimer?.cancel();
+    _shieldShakeTimer?.cancel();
     
     // Reactivar snippets al salir del juego
     SnippetService().setGameOrCalculatorActive(false);
@@ -606,6 +821,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               
               // Overlay de game over
               if (_gameOver) _buildGameOverOverlay(),
+              if (_gameOver && _showRanking) _buildRankingOverlay(),
 
               // Overlay de transición de nivel (2s)
               if (_inLevelTransition)
@@ -1051,6 +1267,30 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           ),
           // Elementos del juego
           ..._elements.map((element) => _buildGameElement(element)),
+
+          // Partículas: debajo del personaje (sobre elementos)
+          ..._particles.map((p) {
+            final opacity = (p.lifeMs / 1200).clamp(0.0, 1.0);
+            String img;
+            switch (p.kind) {
+              case 3:
+                img = 'assets/images/game/moneda_oro.png';
+                break;
+              case 2:
+                img = 'assets/images/game/moneda_plata.png';
+                break;
+              default:
+                img = 'assets/images/game/moneda_cobre.png';
+            }
+            return Positioned(
+              left: p.xPx - p.sizePx / 2,
+              top: p.yPx - p.sizePx / 2,
+              child: Opacity(
+                opacity: opacity,
+                child: Image.asset(img, width: p.sizePx, height: p.sizePx),
+              ),
+            );
+          }),
           
           // Jugador (alcancía) - sin GestureDetector individual
           Positioned(
@@ -1148,6 +1388,35 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     color: Colors.white,
                   ),
                 ),
+              ),
+            ),
+
+          // Etiqueta "protegido" centrada bajo la bolita del contador
+          if (_shieldActive && _shieldUntil != null)
+            Positioned(
+              left: MediaQuery.of(context).size.width * _playerX - (90 * _playerScale) / 2,
+              bottom: 30 + (380 * _playerScale) + 8 + 36 + 6,
+              child: Image.asset(
+                'assets/images/game/protegido.png',
+                width: 90 * _playerScale,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 90 * _playerScale,
+                    height: 24,
+                    alignment: Alignment.center,
+                    child: Text(
+                      'PROTEGIDO',
+                      style: TextStyle(
+                        fontFamily: 'Gotham Rounded',
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.yellowAccent,
+                        shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
         
@@ -1316,10 +1585,45 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               ),
             ),
           ),
+
+        // Textos flotantes sobre el personaje
+        ..._buildFloatingTextsOverPlayer(),
       ],
         ),
       ),
     );
+  }
+
+  List<Widget> _buildFloatingTextsOverPlayer() {
+    final now = DateTime.now();
+    final double baseLeft = MediaQuery.of(context).size.width * _playerX;
+    final double baseBottom = 30 + (380 * _playerScale) + 56; // un poco encima de la cabeza
+    return _floatingTexts.map((t) {
+      final ms = now.difference(t.createdAt).inMilliseconds.clamp(0, t.durationMs);
+      final progress = ms / t.durationMs; // 0..1
+      final double yOffset = progress * 28; // sube ~28px
+      final double opacity = 1.0 - progress;
+      return Positioned(
+        left: baseLeft,
+        bottom: baseBottom + yOffset,
+        child: Opacity(
+          opacity: opacity,
+          child: Transform.translate(
+            offset: Offset(-18, 0),
+            child: Text(
+              t.text,
+              style: TextStyle(
+                fontFamily: 'Gotham Rounded',
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: t.color,
+                shadows: [Shadow(color: Colors.black87, blurRadius: 4, offset: Offset(0,1))],
+              ),
+            ),
+          ),
+        ),
+      );
+    }).toList();
   }
   
   Widget _buildGameElement(GameElement element) {
@@ -1354,23 +1658,24 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       fallbackColor = Color(0xFFFFD700);
       fallbackIcon = Icons.star;
     } else {
-      imagePath = 'assets/images/game/tarjeta_mala0${math.Random().nextInt(3) + 1}.png';
+      final int subtype = (element.value >= 1 && element.value <= 3) ? element.value : 1;
+      imagePath = 'assets/images/game/tarjeta_mala0${subtype}.png';
       fallbackColor = Color(0xFFE91E63); // Rojo para tarjetas malas
       fallbackIcon = Icons.credit_card;
     }
     
     final size = MediaQuery.of(context).size;
     final double elemSizePx = size.width * 0.13; // 13% del ancho
-    final double bonusSizePx = size.width * 0.20;
-    final bool isBonus = element.type == 'bonus';
-    final double renderSize = isBonus ? bonusSizePx : elemSizePx;
+    final double bigBadSizePx = size.width * 0.20;
+    final bool isBigBad = element.type == 'bad_big';
+    final double renderSize = isBigBad ? bigBadSizePx : elemSizePx;
     return Positioned(
       left: size.width * element.x - (renderSize / 2),
       top: size.height * element.y - (renderSize / 2),
       child: Transform.rotate(
         angle: element.rotation,
         child: Image.asset(
-          imagePath,
+          isBigBad ? 'assets/images/game/tarjeta_mala01.png' : imagePath,
           width: renderSize,
           height: renderSize,
           fit: BoxFit.contain,
@@ -1480,9 +1785,163 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
+
+                SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showRanking = true;
+                    });
+                    if (_top10.isEmpty) {
+                      _loadTop10();
+                    }
+                  },
+                  child: Text(
+                    'Ver ranking',
+                    style: TextStyle(
+                      fontFamily: 'Gotham Rounded',
+                      fontSize: 14,
+                      color: Color(0xFF1565C0),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRankingOverlay() {
+    return Container(
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/game/fondo2.jpg'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Header estilo instrucciones
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                children: [
+                  Text(
+                    'BIENVENIDOS',
+                    style: TextStyle(
+                      fontFamily: 'Gotham Rounded',
+                      fontSize: 19,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  Text(
+                    'JUEGO DE AHORRO',
+                    style: TextStyle(
+                      fontFamily: 'Gryzensa',
+                      fontSize: 28,
+                      fontWeight: FontWeight.w300,
+                      color: Colors.white70,
+                      height: 0.8,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            Expanded(
+              child: Center(
+                child: Transform.translate(
+                  offset: Offset(0, -80),
+                  child: Container(
+                  width: 340,
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black26, blurRadius: 12, offset: Offset(0,6)),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('TOP 10', style: TextStyle(fontFamily: 'Gotham Rounded', fontSize: 22, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 12),
+                      Container(
+                        height: 260,
+                        child: _loadingRanking
+                            ? Center(child: CircularProgressIndicator())
+                            : ListView.builder(
+                                itemCount: _top10.length,
+                                itemBuilder: (context, index) {
+                                  final item = _top10[index];
+                                  final name = (item['username'] ?? item['name'] ?? 'Usuario').toString();
+                                  final score = (item['highest_score'] ?? item['score'] ?? 0).toString();
+                                  final highlight = (_currentUsername != null && name == _currentUsername);
+                                  return Container(
+                                    padding: EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                                    margin: EdgeInsets.symmetric(vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: highlight ? Color(0xFFFFF3CD) : Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(color: Colors.black12),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('${index + 1}.  ' + name,
+                                            style: TextStyle(
+                                              fontFamily: 'Gotham Rounded', fontSize: 14,
+                                              fontWeight: highlight ? FontWeight.bold : FontWeight.w500,
+                                              color: highlight ? Color(0xFF856404) : Colors.black87,
+                                            )),
+                                        Text(score,
+                                            style: TextStyle(
+                                              fontFamily: 'Gotham Rounded', fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.black87,
+                                            )),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                      SizedBox(height: 16),
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _showRanking = false;
+                          });
+                          _restartGame();
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(25),
+                            gradient: LinearGradient(colors: [Color(0xFF2196F3), Color(0xFF1565C0)]),
+                          ),
+                          child: Center(
+                            child: Text('REINTENTAR', style: TextStyle(
+                              fontFamily: 'Gotham Rounded', fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white,
+                            )),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -1494,6 +1953,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       final userManager = Provider.of<UserManager>(context, listen: false);
       final userId = userManager.currentUser?['id'] ?? 1; // Usar ID por defecto si no hay usuario
       final username = userManager.userName;
+      _currentUsername = username;
       
       final response = await http.post(
         Uri.parse('https://zumuradigital.com/app-oblatos-login/save_game_score.php'), // Tu URL actualizada
@@ -1511,6 +1971,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         final data = jsonDecode(response.body);
         if (data['success']) {
           print('Puntaje guardado correctamente: ${data['score_id']}');
+          _loadTop10();
         } else {
           print('Error al guardar puntaje: ${data['error']}');
         }
@@ -1519,6 +1980,40 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       }
     } catch (e) {
       print('Error al guardar puntaje: $e');
+    }
+  }
+
+  Future<void> _loadTop10() async {
+    try {
+      setState(() {
+        _loadingRanking = true;
+      });
+      // Usar el mismo backend donde ya funciona el ranking (app-oblatos-login)
+      final res = await http.get(Uri.parse('https://zumuradigital.com/app-oblatos-login/get_game_ranking.php?type=highest&limit=10'));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        final List<dynamic> ranking = (data is Map && data['success'] == true && data['ranking'] is List)
+            ? List<dynamic>.from(data['ranking'])
+            : [];
+        setState(() {
+          _top10 = ranking;
+          _loadingRanking = false;
+          _showRanking = true;
+        });
+      } else {
+        setState(() {
+          _top10 = [];
+          _loadingRanking = false;
+          _showRanking = true;
+        });
+      }
+    } catch (e) {
+      print('Error cargando ranking: $e');
+      setState(() {
+        _top10 = [];
+        _loadingRanking = false;
+        _showRanking = true;
+      });
     }
   }
 }
