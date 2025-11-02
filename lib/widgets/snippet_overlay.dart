@@ -197,8 +197,7 @@ class _SnippetOverlayState extends State<SnippetOverlay>
         final responseData = jsonDecode(response.body);
         if (responseData['success']) {
           print('✅ Puntos de snippet agregados exitosamente: ${responseData['total_points']} puntos totales');
-          // Actualizar los puntos en el UserManager
-          userManager.updateUserPoints(responseData['total_points']);
+          await userManager.refreshAppPoints();
         } else {
           print('❌ Error al agregar puntos de snippet: ${responseData['error']}');
         }

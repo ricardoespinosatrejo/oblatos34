@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
-import 'inicio.dart'; // Para acceder a ProfileImageManager
 import 'user_manager.dart';
+import 'widgets/animated_profile_image.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -238,14 +238,64 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildHeader() {
-    return Padding(
+    return Container(
+      height: 120,
       padding: const EdgeInsets.all(20.0),
-      child: Row(
+      color: Colors.transparent, // Asegurar que el container sea transparente
+      child: Stack(
+        clipBehavior: Clip.none, // Permitir overflow controlado
         children: [
-          // Menú hamburguesa (ya estás en menu, no hace nada)
-          GestureDetector(
-            onTap: () {
-              // Ya estás en menu.dart, no hace nada
+          // Título central centrado
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: Column(
+              children: [
+                Text(
+                  'BIENVENIDOS',
+                  style: TextStyle(
+                    fontFamily: 'Gotham Rounded',
+                    fontSize: 19,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    letterSpacing: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                Text(
+                  'MENU',
+                  style: TextStyle(
+                    fontFamily: 'Gryzensa',
+                    fontSize: 35,
+                    fontWeight: FontWeight.normal,
+                    color: Colors.white,
+                    letterSpacing: 2.0,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 2),
+                Text(
+                  '¿Qué quieres aprender hoy?',
+                  style: TextStyle(
+                    fontFamily: 'Gotham Rounded',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w300,
+                    color: Colors.white70,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+          
+          // Menú hamburguesa (izquierda)
+          Positioned(
+            left: 0,
+            top: 0,
+            child: GestureDetector(
+              onTap: () {
+                // Ya estás en menu.dart, no hace nada
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Ya estás en el menú principal'),
@@ -253,146 +303,119 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   backgroundColor: Color(0xFFE91E63),
                 ),
               );
-            },
-            child: Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: Color(0xFFE91E63),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                Icons.menu,
-                color: Colors.white,
-                size: 24,
+              },
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Color(0xFFE91E63),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.menu,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ),
           ),
           
-          Spacer(),
-          
-          // Título central
-          Column(
-            children: [
-              Text(
-                'BIENVENIDOS',
-                style: TextStyle(
-                  fontFamily: 'Gotham Rounded',
-                  fontSize: 19,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white,
-                  letterSpacing: 1.5,
-                ),
-              ),
-              Text(
-                'MENU',
-                style: TextStyle(
-                  fontFamily: 'Gryzensa',
-                  fontSize: 35,
-                  fontWeight: FontWeight.normal,
-                  color: Colors.white,
-                  letterSpacing: 2.0,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                '¿Qué quieres aprender hoy?',
-                style: TextStyle(
-                  fontFamily: 'Gotham Rounded',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w300,
-                  color: Colors.white70,
-                ),
-              ),
-            ],
-          ),
-          
-          Spacer(),
-          
-          // Perfil de usuario
-          Column(
-            children: [
-              GestureDetector(
-                onTap: () async {
-                  // Reproducir audio antes de navegar
-                  try {
-                    final audioPlayer = AudioPlayer();
-                    await audioPlayer.play(AssetSource('audios/perfil.mp3'));
-                    await Future.delayed(Duration(milliseconds: 200));
-                    audioPlayer.dispose();
-                  } catch (e) {
-                    print('Error reproduciendo audio: $e');
-                  }
-                  
-                  Navigator.pushNamed(context, '/perfil');
-                },
-                child: Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Color(0xFFE91E63), width: 2),
-                    color: Colors.white,
-                  ),
-                  child: Stack(
-                    children: [
-                      // Foto de perfil o imagen por defecto
-                      Center(
-                        child: ClipOval(
-                          child: Consumer<UserManager>(
-                            builder: (context, userManager, child) {
-                              final profileImage = userManager.currentUser?['profile_image'] ?? 1;
-                              return Image.asset(
-                                'assets/images/perfil/perfil$profileImage.png',
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  // Si falla, mostrar imagen por defecto
-                                  return Image.asset(
-                                    'assets/images/1inicio/perfil.png',
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.cover,
-                                  );
-                                },
-                              );
-                            },
+          // Perfil de usuario (derecha) - mismo estilo que HeaderNavigation
+          Positioned(
+            right: -20, // Compensar padding y pegar al borde
+            top: -30,
+            child: GestureDetector(
+              onTap: () async {
+                // Reproducir audio antes de navegar
+                try {
+                  final audioPlayer = AudioPlayer();
+                  await audioPlayer.play(AssetSource('audios/perfil.mp3'));
+                  await Future.delayed(Duration(milliseconds: 200));
+                  audioPlayer.dispose();
+                } catch (e) {
+                  print('Error reproduciendo audio: $e');
+                }
+                
+                Navigator.pushNamed(context, '/perfil');
+              },
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Imagen de perfil con animación
+                  Consumer<UserManager>(
+                    builder: (context, userManager, child) {
+                      final profileImage = userManager.currentUser?['profile_image'] ?? 1;
+                      
+                      Widget imageWidget;
+                      
+                      if (profileImage >= 1 && profileImage <= 6) {
+                        imageWidget = ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: 120,
+                            maxWidth: MediaQuery.of(context).size.width * 0.4,
                           ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: Color(0xFF4CAF50),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Image.asset(
+                              'assets/images/perfil/perfil$profileImage-big.png',
+                              fit: BoxFit.fitHeight,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/1inicio/perfil.png',
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
+                        );
+                      } else {
+                        imageWidget = ClipOval(
+                          child: Image.asset(
+                            'assets/images/perfil/perfil$profileImage.png',
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                          ),
+                        );
+                      }
+                      
+                      return AnimatedProfileImage(
+                        key: ValueKey('profile_image_menu'),
+                        profileImage: profileImage,
+                        imageWidget: imageWidget,
+                      );
+                    },
                   ),
-                ),
-              ),
-              SizedBox(height: 4),
-              Consumer<UserManager>(
-                builder: (context, userManager, child) {
-                  return Text(
-                    userManager.userName,
-                    style: TextStyle(
-                      fontFamily: 'Gotham Rounded',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
+                  // Nombre del usuario
+                  Positioned(
+                    top: 80,
+                    right: 0,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFF44336).withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Consumer<UserManager>(
+                        builder: (context, userManager, child) {
+                          return Text(
+                            userManager.userName,
+                            style: TextStyle(
+                              fontFamily: 'Gotham Rounded',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ],
       ),

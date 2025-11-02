@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'user_manager.dart';
 import 'widgets/header_navigation.dart';
+import 'inicio.dart';
+import 'services/snippet_service.dart';
 
 class PerfilScreen extends StatefulWidget {
   @override
@@ -28,6 +30,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   bool _isEditing = false;
   int _selectedProfileImage = 1; // 1, 2, o 3
+  
+  // Modo debug: cambia a false cuando termines las pruebas
+  static const bool DEBUG_UNLOCK_ALL_PROFILES = false; // Cambiar a false en producción
 
   @override
   void initState() {
@@ -93,7 +98,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
     super.dispose();
   }
 
-  void _loadUserData() {
+  Future<void> _loadUserData() async {
     final userManager = Provider.of<UserManager>(context, listen: false);
     final user = userManager.currentUser;
 
@@ -105,11 +110,16 @@ class _PerfilScreenState extends State<PerfilScreen> {
       _selectedProfileImage = user['profile_image'] ?? 1;
       
       // Actualizar sesión diaria automáticamente al cargar el perfil
-      _updateSesionDiaria(userManager);
+      await _updateSesionDiaria(userManager);
+      await userManager.refreshAppPoints();
+      await userManager.refreshGamePoints();
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
-  void _updateSesionDiaria(UserManager userManager) async {
+  Future<void> _updateSesionDiaria(UserManager userManager) async {
     try {
       final user = userManager.currentUser;
       if (user == null || user['id'] == null) return;
@@ -125,9 +135,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
       );
 
       if (response.statusCode == 200) {
-        // Actualizar UserManager con los nuevos datos
-        userManager.updateSesionDiaria();
-        print('✅ Sesión diaria actualizada automáticamente');
+        await userManager.refreshAppPoints();
+        print('✅ Sesión diaria sincronizada con backend');
       }
     } catch (e) {
       print('❌ Error actualizando sesión diaria: $e');
@@ -262,8 +271,118 @@ class _PerfilScreenState extends State<PerfilScreen> {
     }
   }
 
+  Widget _buildProfileImageSelector(int imageNumber, int totalPoints) {
+    final isUnlocked = _isProfileUnlocked(imageNumber, totalPoints);
+    final isSelected = _selectedProfileImage == imageNumber;
+    final requiredPoints = _getRequiredPoints(imageNumber);
+
+    return GestureDetector(
+      onTap: isUnlocked ? () => _selectProfileImage(imageNumber) : () {
+        // Mostrar mensaje si no está desbloqueado
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Necesitas ${_formatNumber(requiredPoints)} puntos para desbloquear este perfil',
+              style: TextStyle(
+                fontFamily: 'Gotham Rounded',
+                fontSize: 14,
+              ),
+            ),
+            backgroundColor: Color(0xFF9C27B0),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 7),
+        child: Column(
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? Color(0xFF5CF49D)
+                      : (isUnlocked ? Colors.grey.shade400 : Colors.grey.shade600),
+                  width: isSelected ? 5 : 3,
+                ),
+              ),
+              child: ClipOval(
+                child: Image.asset(
+                  _getProfileImagePathForSelector(imageNumber, isUnlocked),
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            SizedBox(height: 4),
+            // Mostrar puntos requeridos
+            Text(
+              imageNumber == 1 ? 'Disponible' : '${_formatNumber(requiredPoints)} pts',
+              style: TextStyle(
+                fontFamily: 'Gotham Rounded',
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: isUnlocked ? Color(0xFF9C27B0) : Colors.grey.shade600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatNumber(int number) {
+    if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(number % 1000 == 0 ? 0 : 1)}k';
+    }
+    return number.toString();
+  }
+
   String _getProfileImagePath(int imageNumber) {
     return 'assets/images/perfil/perfil$imageNumber.png';
+  }
+
+  // Obtener puntos requeridos para cada perfil
+  int _getRequiredPoints(int imageNumber) {
+    switch (imageNumber) {
+      case 1:
+        return 0; // Siempre activo
+      case 2:
+        return 2000;
+      case 3:
+        return 7000;
+      case 4:
+        return 15000;
+      case 5:
+        return 30000;
+      case 6:
+        return 50000;
+      default:
+        return 0;
+    }
+  }
+
+  // Verificar si un perfil está desbloqueado
+  bool _isProfileUnlocked(int imageNumber, int totalPoints) {
+    // En modo debug, todos los perfiles están desbloqueados
+    if (DEBUG_UNLOCK_ALL_PROFILES) {
+      return true;
+    }
+    return totalPoints >= _getRequiredPoints(imageNumber);
+  }
+
+  // Obtener la ruta de la imagen (normal o "-no")
+  String _getProfileImagePathForSelector(int imageNumber, bool isUnlocked) {
+    if (isUnlocked) {
+      return 'assets/images/perfil/perfil$imageNumber.png';
+    } else {
+      return 'assets/images/perfil/perfil$imageNumber-no.png';
+    }
   }
 
   String _getRangoEdad(String? rango) {
@@ -286,100 +405,100 @@ class _PerfilScreenState extends State<PerfilScreen> {
         ),
         child: SafeArea(
           child: Column(
-            children: [
-              // Header de navegación
-              HeaderNavigation(
-                onMenuTap: () {
-                  Navigator.pop(context);
-                },
-                title: 'BIENVENIDOS',
-                subtitle: 'MI PERFIL',
-              ),
+          children: [
+            // Header de navegación
+            HeaderNavigation(
+              onMenuTap: () {
+                Navigator.pop(context);
+              },
+              title: 'BIENVENIDOS',
+              subtitle: 'MI PERFIL',
+            ),
 
-              // Contenido principal
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  padding: EdgeInsets.only(
-                    left: 20,
-                    right: 20,
-                    bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-                  ),
-                  child: Column(
-                    children: [
-                      SizedBox(height: 20),
+            // Contenido principal
+            Expanded(
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                ),
+                child: Column(
+                  children: [
+                    SizedBox(height: 20),
 
-                      // Ficha principal
-                      Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 15,
-                              offset: Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          children: [
-                            // Fondo de la ficha (relleno completo)
-                            Positioned.fill(
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: Image.asset(
-                                  'assets/images/perfil/ficha.png',
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-
-                            // Contenido de la ficha
-                            Padding(
-                              padding: EdgeInsets.all(30),
-                              child: Column(
-                                children: [
-                                                                                                        // Imagen de perfil y selector
-                                   _buildProfileImageSection(),
- 
-                                   SizedBox(height: 18), // Reducido de 20 a 18
-                                   // Información del usuario
-                                   _buildUserInfoSection(),
- 
-                                  SizedBox(height: 16),
-                                  // Contenedores de puntos y racha
-                                  _buildPointsRow(),
-                                   
-                                   SizedBox(height: 8), // Reducido de 15 a 8
-                                   // Información adicional de puntos
-                                   _buildPuntosInfo(),
- 
-                                  SizedBox(height: 24),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                    // Ficha principal
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 15,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
                       ),
+                      child: Stack(
+                        children: [
+                          // Fondo de la ficha (relleno completo)
+                          Positioned.fill(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.asset(
+                                'assets/images/perfil/ficha.png',
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
 
-                      SizedBox(height: 20),
+                          // Contenido de la ficha
+                          Padding(
+                            padding: EdgeInsets.all(30),
+                            child: Column(
+                              children: [
+                                // Imagen de perfil y selector
+                                _buildProfileImageSection(),
 
-                      // Información del padre/madre fuera de la ficha principal
-                      _buildParentInfoSection(),
+                                SizedBox(height: 18), // Reducido de 20 a 18
+                                // Información del usuario
+                                _buildUserInfoSection(),
 
-                      SizedBox(height: 30),
+                                SizedBox(height: 16),
+                                // Contenedores de puntos y racha
+                                _buildPointsRow(),
 
-                      // Botones de acción
-                      _buildActionButtons(),
-                      
-                      SizedBox(height: 30),
-                    ],
-                  ),
+                                SizedBox(height: 8), // Reducido de 15 a 8
+                                // Información adicional de puntos
+                                _buildPuntosInfo(),
+
+                                SizedBox(height: 24),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: 20),
+
+                    // Información del padre/madre fuera de la ficha principal
+                    _buildParentInfoSection(),
+
+                    SizedBox(height: 30),
+
+                    // Botones de acción
+                    _buildActionButtons(),
+
+                    SizedBox(height: 30),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
         ),
       ),
     );
@@ -406,38 +525,34 @@ class _PerfilScreenState extends State<PerfilScreen> {
           ),
         ),
 
-        SizedBox(height: 13), // Reducido de 20 a 13 (subido 7 píxeles)
-        // Selector de imágenes de perfil
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [1, 2, 3].map((imageNumber) {
-            bool isSelected = _selectedProfileImage == imageNumber;
-            return GestureDetector(
-              onTap: () => _selectProfileImage(imageNumber),
-              child: Container(
-                margin: EdgeInsets.symmetric(horizontal: 7),
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isSelected
-                        ? Color(0xFF5CF49D)
-                        : Colors.grey.shade400,
-                    width: isSelected ? 5 : 3,
-                  ),
+        SizedBox(height: 13),
+        // Selector de imágenes de perfil - Grid de 6 imágenes
+        Consumer<UserManager>(
+          builder: (context, userManager, child) {
+            final puntosApp = userManager.puntos;
+            final puntosJuego = userManager.gamePoints;
+            final totalPoints = puntosApp + puntosJuego;
+            
+            return Column(
+              children: [
+                // Primera fila: perfil 1, 2, 3
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [1, 2, 3].map((imageNumber) {
+                    return _buildProfileImageSelector(imageNumber, totalPoints);
+                  }).toList(),
                 ),
-                child: ClipOval(
-                  child: Image.asset(
-                    _getProfileImagePath(imageNumber),
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.cover,
-                  ),
+                SizedBox(height: 15),
+                // Segunda fila: perfil 4, 5, 6
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [4, 5, 6].map((imageNumber) {
+                    return _buildProfileImageSelector(imageNumber, totalPoints);
+                  }).toList(),
                 ),
-              ),
+              ],
             );
-          }).toList(),
+          },
         ),
       ],
     );
@@ -561,67 +676,82 @@ class _PerfilScreenState extends State<PerfilScreen> {
   Widget _buildPointsRow() {
     return Consumer<UserManager>(
       builder: (context, userManager, child) {
-        final puntos = userManager.puntos;
-        final rachaDias = userManager.rachaDias;
+        final puntosApp = userManager.puntos;
+        final puntosJuego = userManager.gamePoints;
 
-        return Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: _showPuntosDetalle,
-                child: Container(
-                  height: 41,
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Color(0xFF703FC2),
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        'assets/images/perfil/puntos-img.png',
-                        width: 28,
-                        height: 28,
-                        fit: BoxFit.contain,
-                      ),
-                      SizedBox(width: 13),
-                      Text(
-                        '$puntos puntos',
-                        style: TextStyle(
-                          fontFamily: 'GothamRounded',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+        final puntosTotales = puntosApp + puntosJuego;
+
+        Widget buildCard({required String label, required int value, IconData? icon, Color color = const Color(0xFF703FC2), double height = 52, double fontSize = 16, VoidCallback? onTap}) {
+          return GestureDetector(
+            onTap: onTap,
+            child: Container(
+              width: double.infinity,
+              height: height,
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(26),
               ),
-            ),
-
-            SizedBox(width: 10),
-
-            Expanded(
-              child: Container(
-                height: 41,
-                padding: EdgeInsets.symmetric(horizontal: 39, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Color(0xFF703FC2),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Center(
-                  child: Text(
-                    'Racha: $rachaDias día${rachaDias == 1 ? '' : 's'}',
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, color: Colors.white, size: fontSize + 4),
+                    SizedBox(width: 12),
+                  ],
+                  Text(
+                    '$value',
                     style: TextStyle(
                       fontFamily: 'GothamRounded',
-                      fontSize: 14,
+                      fontSize: fontSize + 2,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'GothamRounded',
+                      fontSize: fontSize - 2,
                       fontWeight: FontWeight.w500,
                       color: Colors.white,
                     ),
                   ),
-                ),
+                ],
               ),
+            ),
+          );
+        }
+
+        return Column(
+          children: [
+            buildCard(
+              label: 'Puntos App',
+              value: puntosApp,
+              icon: Icons.phone_android,
+              color: Color(0xFF703FC2),
+              height: 54,
+              fontSize: 16,
+              onTap: _showPuntosDetalle,
+            ),
+            SizedBox(height: 10),
+            buildCard(
+              label: 'Puntos Juego',
+              value: puntosJuego,
+              icon: Icons.videogame_asset,
+              color: Color(0xFF5B3AA3),
+              height: 52,
+              fontSize: 15,
+            ),
+            SizedBox(height: 10),
+            buildCard(
+              label: 'Puntos Totales Usuario',
+              value: puntosTotales,
+              icon: Icons.stars,
+              color: Color(0xFF9C27B0),
+              height: 56,
+              fontSize: 17,
             ),
           ],
         );
@@ -634,6 +764,13 @@ class _PerfilScreenState extends State<PerfilScreen> {
       builder: (context, userManager, child) {
         final ultimaSesion = userManager.ultimaSesion;
         final fechaInicioRacha = userManager.fechaInicioRacha;
+        final puntosApp = userManager.puntos;
+        final puntosSnippets = userManager.puntosSnippets;
+        final puntosDiarios = userManager.puntosDiarios;
+        final puntosRacha = userManager.rachaDias;
+        final puntosJuego = userManager.gamePoints;
+
+        final puntosTotales = puntosApp + puntosJuego;
         
         return Container(
           padding: EdgeInsets.all(15),
@@ -644,7 +781,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                'INFORMACIÓN DE PUNTOS',
+                'DETALLE DE PUNTOS',
                 style: TextStyle(
                   fontFamily: 'Gotham Rounded',
                   fontSize: 12,
@@ -653,6 +790,19 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 ),
               ),
               SizedBox(height: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildPuntosDetalleItem('Puntos App (totales)', '$puntosApp', Colors.deepPurpleAccent),
+                  _buildPuntosDetalleItem('Puntos por Snippets', '$puntosSnippets', Colors.purple.shade200),
+                  _buildPuntosDetalleItem('Puntos por Sesiones Diarias', '$puntosDiarios', Colors.purple.shade200),
+                  _buildPuntosDetalleItem('Racha actual', '${puntosRacha} días', Colors.purple.shade200),
+                  SizedBox(height: 10),
+                  _buildPuntosDetalleItem('Puntos Juego acumulados', '$puntosJuego', Colors.green),
+                  _buildPuntosDetalleItem('Puntos Totales Usuario', '$puntosTotales', Colors.amber),
+                  SizedBox(height: 12),
+                ],
+              ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -709,6 +859,12 @@ class _PerfilScreenState extends State<PerfilScreen> {
       builder: (BuildContext context) {
         return Consumer<UserManager>(
           builder: (context, userManager, child) {
+            final puntosApp = userManager.puntos;
+            final puntosSnippets = userManager.puntosSnippets;
+            final puntosDiarios = userManager.puntosDiarios;
+            final puntosRacha = userManager.rachaDias;
+            final puntosJuego = userManager.gamePoints;
+            final puntosTotales = puntosApp + puntosJuego;
             return AlertDialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(
@@ -727,14 +883,14 @@ class _PerfilScreenState extends State<PerfilScreen> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildPuntosDetalleItem('Puntos Totales', '${userManager.puntos}', Colors.amber),
-                  _buildPuntosDetalleItem('Racha Actual', '${userManager.rachaDias} días', Color(0xFF9C27B0)),
-                  _buildPuntosDetalleItem('Última Sesión', 
-                    userManager.ultimaSesion != null 
-                        ? '${userManager.ultimaSesion!.day}/${userManager.ultimaSesion!.month}/${userManager.ultimaSesion!.year}'
-                        : 'Nunca', 
-                    Colors.green),
-                  SizedBox(height: 15),
+                  _buildPuntosDetalleItem('Puntos App (totales)', '$puntosApp', Colors.deepPurpleAccent),
+                  _buildPuntosDetalleItem('Puntos por Snippets', '$puntosSnippets', Colors.purple.shade200),
+                  _buildPuntosDetalleItem('Puntos por Sesiones Diarias', '$puntosDiarios', Colors.purple.shade200),
+                  _buildPuntosDetalleItem('Racha actual', '${puntosRacha} días', Color(0xFF9C27B0)),
+                  SizedBox(height: 10),
+                  _buildPuntosDetalleItem('Puntos Juego acumulados', '$puntosJuego', Colors.green),
+                  _buildPuntosDetalleItem('Puntos Totales Usuario', '$puntosTotales', Colors.amber),
+                  SizedBox(height: 12),
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -959,27 +1115,132 @@ class _PerfilScreenState extends State<PerfilScreen> {
         ],
       );
     } else {
-      return Align(
-        alignment: Alignment.center,
-        child: ElevatedButton(
-          onPressed: _toggleEdit,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFFF44336),
-            foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25),
+      return Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _toggleEdit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFFF44336),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: Text(
+                'EDITAR PERFIL',
+                style: TextStyle(
+                  fontFamily: 'Gotham Rounded',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
-          child: Text(
-            'EDITAR PERFIL',
+          SizedBox(height: 15),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _cerrarSesion,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF9C27B0),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: Text(
+                'CERRAR SESIÓN',
+                style: TextStyle(
+                  fontFamily: 'Gotham Rounded',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+  }
+
+  void _cerrarSesion() async {
+    // Mostrar diálogo de confirmación
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            'CERRAR SESIÓN',
             style: TextStyle(
               fontFamily: 'Gotham Rounded',
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.w600,
+              color: Color(0xFF9C27B0),
             ),
+            textAlign: TextAlign.center,
           ),
-        ),
+          content: Text(
+            '¿Estás seguro de que deseas cerrar sesión?',
+            style: TextStyle(
+              fontFamily: 'Gotham Rounded',
+              fontSize: 14,
+              color: Colors.black87,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'CANCELAR',
+                style: TextStyle(
+                  fontFamily: 'Gotham Rounded',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(
+                'CERRAR SESIÓN',
+                style: TextStyle(
+                  fontFamily: 'Gotham Rounded',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF9C27B0),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmar == true) {
+      // Limpiar información del usuario
+      final userManager = Provider.of<UserManager>(context, listen: false);
+      userManager.clearUserInfo();
+      
+      // Detener snippets
+      try {
+        SnippetService().stopAppTimer();
+      } catch (_) {}
+
+      // Navegar a la pantalla de inicio de sesión
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => InicioPage()),
+        (route) => false, // Eliminar todas las rutas anteriores
       );
     }
   }

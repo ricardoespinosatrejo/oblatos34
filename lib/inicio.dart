@@ -337,9 +337,8 @@ class _InicioPageState extends State<InicioPage> {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['success'] == true) {
-          // Actualizar UserManager con los nuevos datos
-          userManager.updateSesionDiaria();
-          print('✅ Sesión diaria actualizada automáticamente - puntos: ${responseData['data']['puntos']}');
+          await userManager.refreshAppPoints();
+          print('✅ Sesión diaria sincronizada');
         } else {
           print('❌ Error en respuesta de sesión diaria: ${responseData['error']}');
         }

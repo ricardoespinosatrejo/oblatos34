@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class UserManager extends ChangeNotifier {
   static final UserManager _instance = UserManager._internal();
@@ -15,6 +17,9 @@ class UserManager extends ChangeNotifier {
   int _rachaDias = 0;
   DateTime? _fechaInicioRacha;
   DateTime? _ultimoBonusRacha;
+  int _puntosSnippets = 0;
+  int _puntosDiarios = 0;
+  int _gamePoints = 0;
 
   String get userName => _userName;
   String get userEmail => _userEmail;
@@ -22,6 +27,9 @@ class UserManager extends ChangeNotifier {
   
   // Getters para el sistema de puntos
   int get puntos => _puntos;
+  int get puntosSnippets => _puntosSnippets;
+  int get puntosDiarios => _puntosDiarios;
+  int get gamePoints => _gamePoints;
   DateTime? get ultimaSesion => _ultimaSesion;
   int get rachaDias => _rachaDias;
   DateTime? get fechaInicioRacha => _fechaInicioRacha;
@@ -40,6 +48,8 @@ class UserManager extends ChangeNotifier {
     
     // Cargar datos del sistema de puntos
     _puntos = user['puntos'] ?? 0;
+    _puntosSnippets = user['puntos_snippets'] ?? 0;
+    _puntosDiarios = user['puntos_diarios'] ?? 0;
     _ultimaSesion = user['ultima_sesion'] != null 
         ? DateTime.parse(user['ultima_sesion']) 
         : null;
@@ -50,6 +60,7 @@ class UserManager extends ChangeNotifier {
     _ultimoBonusRacha = user['ultimo_bonus_racha'] != null 
         ? DateTime.parse(user['ultimo_bonus_racha']) 
         : null;
+    _gamePoints = user['total_game_points'] ?? 0;
     
     notifyListeners();
   }
@@ -61,10 +72,13 @@ class UserManager extends ChangeNotifier {
     
     // Limpiar datos del sistema de puntos
     _puntos = 0;
+    _puntosSnippets = 0;
+    _puntosDiarios = 0;
     _ultimaSesion = null;
     _rachaDias = 0;
     _fechaInicioRacha = null;
     _ultimoBonusRacha = null;
+    _gamePoints = 0;
     
     notifyListeners();
   }
@@ -94,6 +108,132 @@ class UserManager extends ChangeNotifier {
       _currentUser!['puntos'] = _puntos;
     }
     notifyListeners();
+  }
+
+  void updateGamePoints(int newTotalGamePoints) {
+    _gamePoints = newTotalGamePoints;
+    if (_currentUser != null) {
+      _currentUser!['total_game_points'] = _gamePoints;
+    }
+    notifyListeners();
+  }
+
+  Future<void> refreshGamePoints() async {
+    if (_currentUser == null || _currentUser!['id'] == null) return;
+    final userId = _currentUser!['id'];
+    try {
+      final uri = Uri.parse('https://zumuradigital.com/app-oblatos-login/get_user_game_points.php?user_id=$userId&username=$_userName');
+      if (kDebugMode) {
+        print('🎮 Llamando a: $uri');
+      }
+      final response = await http.get(uri);
+      if (kDebugMode) {
+        print('🎮 Respuesta HTTP: ${response.statusCode}');
+        print('🎮 Body: ${response.body}');
+      }
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (kDebugMode) {
+          print('🎮 Data decodificada: $data');
+        }
+        if (data is Map && data['success'] == true) {
+          // Usar highest_score (mejor puntaje de una partida) como muestra el ranking
+          final rawHighest = data['highest_score'] ?? data['total_score'] ?? 0;
+          if (kDebugMode) {
+            print('🎮 rawHighest: $rawHighest (tipo: ${rawHighest.runtimeType})');
+          }
+          final parsedHighest = (rawHighest is int)
+              ? rawHighest
+              : int.tryParse(rawHighest.toString()) ?? _gamePoints;
+          if (kDebugMode) {
+            print('🎮 parsedHighest: $parsedHighest (gamePoints anterior: $_gamePoints)');
+          }
+          updateGamePoints(parsedHighest);
+          if (kDebugMode) {
+            print('🎮 Game points actualizados: $parsedHighest (highest_score: ${data['highest_score']}, total_score: ${data['total_score']})');
+          }
+        } else if (data is Map) {
+          if (kDebugMode) {
+            print('🎮 Error en respuesta: ${data['error'] ?? 'unknown'}');
+          }
+        }
+      } else {
+        if (kDebugMode) {
+          print('🎮 Error HTTP: ${response.statusCode}');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error refreshGamePoints: $e');
+      }
+    }
+  }
+
+  Future<void> refreshAppPoints() async {
+    if (_currentUser == null || _currentUser!['id'] == null) return;
+    final userId = _currentUser!['id'];
+    try {
+      final uri = Uri.parse('https://zumuradigital.com/app-oblatos-login/get_user_app_points.php?user_id=$userId&username=$_userName');
+      final response = await http.get(uri);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is Map && data['success'] == true) {
+          final payload = (data['data'] ?? data) as Map;
+          if (kDebugMode) {
+            print('📱 Payload puntos app: $payload');
+          }
+          final base = payload['puntos'];
+          final diarios = payload['puntos_diarios'];
+          final snippets = payload['puntos_snippets'];
+          final racha = payload['racha_dias'];
+          final fechaInicio = payload['fecha_inicio_racha'];
+          final ultimoBonus = payload['ultimo_bonus_racha'];
+          final ultimaSesion = payload['ultima_sesion'] ?? payload['ultimaSesion'];
+          final totalApp = payload['total_app_points'] ?? payload['puntos_app'] ?? base;
+
+          final parsedBase = (base is int) ? base : int.tryParse(base.toString()) ?? 0;
+          final parsedSnippets = (snippets is int) ? snippets : int.tryParse(snippets.toString()) ?? 0;
+          final parsedDiarios = (diarios is int) ? diarios : int.tryParse(diarios.toString()) ?? 0;
+          final parsedRacha = (racha is int) ? racha : int.tryParse(racha.toString()) ?? 0;
+          final parsedTotalApp = (totalApp is int)
+              ? totalApp
+              : int.tryParse(totalApp.toString()) ?? (parsedBase + parsedSnippets + parsedDiarios);
+
+          _puntos = parsedTotalApp;
+          _puntosDiarios = (diarios is int) ? diarios : int.tryParse(diarios.toString()) ?? _puntosDiarios;
+          _puntosSnippets = (snippets is int) ? snippets : int.tryParse(snippets.toString()) ?? _puntosSnippets;
+          _rachaDias = parsedRacha;
+          _fechaInicioRacha = (fechaInicio != null && fechaInicio.toString().isNotEmpty)
+              ? DateTime.tryParse(fechaInicio.toString())
+              : _fechaInicioRacha;
+          _ultimoBonusRacha = (ultimoBonus != null && ultimoBonus.toString().isNotEmpty)
+              ? DateTime.tryParse(ultimoBonus.toString())
+              : _ultimoBonusRacha;
+          _ultimaSesion = (ultimaSesion != null && ultimaSesion.toString().isNotEmpty)
+              ? DateTime.tryParse(ultimaSesion.toString())
+              : _ultimaSesion;
+
+          if (_currentUser != null) {
+            _currentUser!['puntos'] = _puntos;
+            _currentUser!['puntos_diarios'] = _puntosDiarios;
+            _currentUser!['puntos_snippets'] = _puntosSnippets;
+            _currentUser!['racha_dias'] = _rachaDias;
+            _currentUser!['fecha_inicio_racha'] = _fechaInicioRacha?.toIso8601String().split('T')[0];
+            _currentUser!['ultimo_bonus_racha'] = _ultimoBonusRacha?.toIso8601String().split('T')[0];
+            _currentUser!['ultima_sesion'] = _ultimaSesion?.toIso8601String().split('T')[0];
+          }
+
+          notifyListeners();
+          if (kDebugMode) {
+            print('📱 Puntos app refrescados: base=$_puntos, snippets=$_puntosSnippets, diarios=$_puntosDiarios, racha=$_rachaDias');
+          }
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error refreshAppPoints: $e');
+      }
+    }
   }
   
   /// Actualizar sesión diaria y calcular puntos

@@ -340,7 +340,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     if (_elements.length >= _currentLevelConfig.maxObjects) return;
 
     // Estrella: reglas especiales en nivel 3 por puntos acumulados (cada 200)
-    if (_level == 3 && _pointsSinceStar >= 200) {
+    // Solo spawnean si el jugador tiene menos de 6 vidas
+    if (_level == 3 && _pointsSinceStar >= 200 && _lives < 6) {
       final double screenWidth = MediaQuery.of(context).size.width;
       final double dxNorm = (120.0 / screenWidth).clamp(0.0, 0.5);
       final double offsetNorm = (random.nextDouble() * 2 - 1) * dxNorm;
@@ -359,7 +360,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       return;
     }
     // Estrella aleatoria normal para otros niveles (2 y 4), no nivel 5
-    if (_level >= 2 && _level < 5 && _level != 3 && math.Random().nextDouble() < _currentLevelConfig.starChance) {
+    // Solo spawnean si el jugador tiene menos de 6 vidas
+    if (_level >= 2 && _level < 5 && _level != 3 && _lives < 6 && math.Random().nextDouble() < _currentLevelConfig.starChance) {
       final double screenWidth = MediaQuery.of(context).size.width;
       final double dxNorm = (120.0 / screenWidth).clamp(0.0, 0.5);
       final double offsetNorm = (random.nextDouble() * 2 - 1) * dxNorm;
@@ -808,8 +810,8 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
               SafeArea(
                 child: Column(
                   children: [
-                    // Header de navegación
-                    _buildHeader(),
+                    if (_currentScreen != 0)
+                      _buildHeader(),
                     
                     // Contenido según la pantalla actual
                     Expanded(
@@ -1173,7 +1175,25 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                           ),
                         ),
                         Text(
-                          'Tienes 3 vidas, cada 500 pts subes de nivel',
+                          'Empiezas con 3 vidas (máximo 6).',
+                          style: TextStyle(
+                            fontFamily: 'Gotham Rounded',
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Atrapa las estrellas doradas para ganar +1 vida extra.',
+                          style: TextStyle(
+                            fontFamily: 'Gotham Rounded',
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Subes de nivel con 100 • 400 • 1000 • 1500 puntos.',
                           style: TextStyle(
                             fontFamily: 'Gotham Rounded',
                             fontSize: 12,
@@ -1971,6 +1991,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         final data = jsonDecode(response.body);
         if (data['success']) {
           print('Puntaje guardado correctamente: ${data['score_id']}');
+          userManager.refreshGamePoints();
           _loadTop10();
         } else {
           print('Error al guardar puntaje: ${data['error']}');

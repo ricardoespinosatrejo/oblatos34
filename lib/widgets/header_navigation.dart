@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../user_manager.dart';
+import 'animated_profile_image.dart';
 
 class HeaderNavigation extends StatelessWidget {
   final VoidCallback onMenuTap;
@@ -27,6 +28,7 @@ class HeaderNavigation extends StatelessWidget {
       height: 120, // Altura fija para la barra de navegación
       padding: const EdgeInsets.all(20.0),
       child: Stack(
+        clipBehavior: Clip.none, // Permitir que los hijos se salgan del Stack
         children: [
           // Título central centrado
           Positioned(
@@ -89,10 +91,12 @@ class HeaderNavigation extends StatelessWidget {
           
           // Perfil de usuario (derecha)
           Positioned(
-            right: 0,
-            top: 0,
-            child: Column(
+            right: -20, // Compensar el padding del Container padre para pegar al borde
+            top: -30, // Compensar el padding superior y subir 10px más
+            child: Stack(
+              clipBehavior: Clip.none,
               children: [
+                // Imagen de perfil (z-index inferior) con animación
                 GestureDetector(
                   onTap: () async {
                     // Solo navegar si no estamos ya en la página de perfil
@@ -113,82 +117,140 @@ class HeaderNavigation extends StatelessWidget {
                       Navigator.pushNamed(context, '/perfil');
                     }
                   },
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: _isCurrentRoutePerfil(context) 
-                            ? Colors.grey.shade400 
-                            : Color(0xFFE91E63), 
-                        width: 2
-                      ),
-                      color: _isCurrentRoutePerfil(context) 
-                          ? Colors.grey.shade200 
-                          : Colors.white,
-                    ),
-                    child: Stack(
-                      children: [
-                        // Foto de perfil o imagen por defecto
-                        Center(
-                          child: ClipOval(
-                            child: Consumer<UserManager>(
-                              builder: (context, userManager, child) {
-                                final profileImage = userManager.currentUser?['profile_image'] ?? 1;
-                                return Image.asset(
-                                  'assets/images/perfil/perfil$profileImage.png',
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    // Si falla, mostrar imagen por defecto
-                                    return Image.asset(
-                                      'assets/images/1inicio/perfil.png',
-                                      width: 50,
-                                      height: 50,
-                                      fit: BoxFit.cover,
-                                    );
-                                  },
-                                );
+                  child: Consumer<UserManager>(
+                    builder: (context, userManager, child) {
+                      final profileImage = userManager.currentUser?['profile_image'] ?? 1;
+                      
+                      Widget imageWidget;
+                      
+                      // Para todos los perfiles (1-6), usar versión -big.png sin contenedor circular
+                      if (profileImage >= 1 && profileImage <= 6) {
+                        imageWidget = ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: 120, // Altura del header
+                            maxWidth: MediaQuery.of(context).size.width * 0.5, // Ancho máximo
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Image.asset(
+                              'assets/images/perfil/perfil$profileImage-big.png',
+                              fit: BoxFit.fitHeight,
+                              errorBuilder: (context, error, stackTrace) {
+                                // Si falla, mostrar imagen normal en círculo
+                                return _buildCircularProfileImage(context, profileImage);
                               },
                             ),
                           ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: _isCurrentRoutePerfil(context) 
-                                  ? Colors.grey.shade400 
-                                  : Color(0xFF4CAF50),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                        );
+                      } else {
+                        // Para perfiles fuera del rango esperado, usar el círculo normal
+                        imageWidget = _buildCircularProfileImage(context, profileImage);
+                      }
+                      
+                      // Usar widget personalizado para animar el cambio de imagen
+                      // Usar una key estable para mantener el mismo widget entre reconstrucciones
+                      return AnimatedProfileImage(
+                        key: ValueKey('profile_image_header'), // Key estable para mantener el estado
+                        profileImage: profileImage,
+                        imageWidget: imageWidget,
+                      );
+                    },
                   ),
                 ),
-                SizedBox(height: 4),
+                // Nombre del usuario (z-index superior, encima de la imagen)
                 Consumer<UserManager>(
                   builder: (context, userManager, child) {
-                    return Text(
-                      userManager.userName,
-                      style: TextStyle(
-                        fontFamily: 'Gotham Rounded',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
+                    final profileImage = userManager.currentUser?['profile_image'] ?? 1;
+                    return Positioned(
+                      top: (profileImage >= 1 && profileImage <= 6) ? 80 : 74, // Posición ajustada para perfiles 1-6
+                      right: 0,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF44336).withOpacity(0.7), // Color rojo con 70% de transparencia
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          userManager.userName,
+                          style: TextStyle(
+                            fontFamily: 'Gotham Rounded',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                offset: Offset(1, 1),
+                                blurRadius: 3,
+                                color: Colors.black.withOpacity(0.5),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     );
                   },
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Widget helper para mostrar imagen de perfil en círculo (para perfiles 1, 3, 4, 5, 6)
+  Widget _buildCircularProfileImage(BuildContext context, int profileImage) {
+    final isPerfilRoute = _isCurrentRoutePerfil(context);
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isPerfilRoute 
+              ? Colors.grey.shade400 
+              : Color(0xFFE91E63), 
+          width: 2
+        ),
+        color: isPerfilRoute 
+            ? Colors.grey.shade200 
+            : Colors.white,
+      ),
+      child: Stack(
+        children: [
+          // Foto de perfil o imagen por defecto
+          Center(
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/perfil/perfil$profileImage.png',
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  // Si falla, mostrar imagen por defecto
+                  return Image.asset(
+                    'assets/images/1inicio/perfil.png',
+                    width: 50,
+                    height: 50,
+                    fit: BoxFit.cover,
+                  );
+                },
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              width: 16,
+              height: 16,
+              decoration: BoxDecoration(
+                color: isPerfilRoute 
+                    ? Colors.grey.shade400 
+                    : Color(0xFF4CAF50),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+              ),
             ),
           ),
         ],
