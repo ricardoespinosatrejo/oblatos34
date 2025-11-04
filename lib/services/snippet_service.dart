@@ -8,21 +8,8 @@ class SnippetService {
   factory SnippetService() => _instance;
   SnippetService._internal();
   
-  // Tiempos progresivos para mostrar snippets
-  final List<int> _snippetTimes = [
-    30,   // Primer snippet a los 30 segundos
-    45,   // Segundo snippet a los 45 segundos
-    60,   // Tercer snippet a los 60 segundos
-    90,   // Cuarto snippet a los 90 segundos
-    150,  // Quinto snippet a los 150 segundos
-    240,  // Sexto snippet a los 4 minutos
-    360,  // Séptimo snippet a los 6 minutos
-    480,  // Octavo snippet a los 8 minutos
-    600,  // Noveno snippet a los 10 minutos
-    720,  // Décimo snippet a los 12 minutos
-    900,  // Undécimo snippet a los 15 minutos
-    1200, // Duodécimo snippet a los 20 minutos
-  ];
+  // Intervalo fijo de 2 minutos (120 segundos) entre snippets
+  static const int _snippetInterval = 120; // 2 minutos en segundos
   
   Timer? _appTimer;
   int _currentSnippetIndex = 0;
@@ -85,13 +72,14 @@ class SnippetService {
   }
   
   void _scheduleNextSnippet() {
-    if (!_isActive || _currentSnippetIndex >= _snippetTimes.length) {
-      print('🎯 SnippetService: No se puede programar snippet - activo: $_isActive, índice: $_currentSnippetIndex');
+    if (!_isActive) {
+      print('🎯 SnippetService: No se puede programar snippet - no está activo');
       return;
     }
     
-    int nextTime = _snippetTimes[_currentSnippetIndex];
-    print('🎯 SnippetService: Programando snippet ${_currentSnippetIndex + 1} en $nextTime segundos');
+    // Usar intervalo fijo de 2 minutos (120 segundos) para todos los snippets
+    int nextTime = _snippetInterval;
+    print('🎯 SnippetService: Programando snippet ${_currentSnippetIndex + 1} en $nextTime segundos (2 minutos)');
     
     _appTimer = Timer(Duration(seconds: nextTime), () {
       if (_isActive) {
@@ -102,8 +90,8 @@ class SnippetService {
   }
   
   void _showNextSnippet() {
-    if (!_isActive || _currentSnippetIndex >= _snippetTimes.length || _isGameOrCalculatorActive || _hasActiveSnippet) {
-      print('🎯 SnippetService: No se puede mostrar snippet - activo: $_isActive, índice: $_currentSnippetIndex, juego/calc: $_isGameOrCalculatorActive, snippet activo: $_hasActiveSnippet');
+    if (!_isActive || _isGameOrCalculatorActive || _hasActiveSnippet) {
+      print('🎯 SnippetService: No se puede mostrar snippet - activo: $_isActive, juego/calc: $_isGameOrCalculatorActive, snippet activo: $_hasActiveSnippet');
       return;
     }
     
@@ -135,8 +123,8 @@ class SnippetService {
       // Incrementar índice para el siguiente snippet
       _currentSnippetIndex++;
       
-      // Programar el siguiente snippet
-      _scheduleNextSnippet();
+      // NO programar el siguiente snippet aquí - se programará cuando se cierre este snippet
+      // El snippet se mostrará durante 10 segundos y luego se programará el siguiente
     }
   }
   
@@ -176,8 +164,9 @@ class SnippetService {
     // Limpiar el overlay
     _onClearSnippet?.call();
     
-    // El snippet se cerró, continuar con el siguiente si es necesario
-    if (_isActive && _currentSnippetIndex < _snippetTimes.length) {
+    // Programar el siguiente snippet para 2 minutos después
+    // El snippet se muestra durante 10 segundos, y luego se programa el siguiente
+    if (_isActive && !_isGameOrCalculatorActive) {
       _scheduleNextSnippet();
     }
   }
@@ -194,9 +183,7 @@ class SnippetService {
       'totalSnippetsShown': _shownSnippetsToday.length,
       'currentIndex': _currentSnippetIndex,
       'isActive': _isActive,
-      'nextSnippetTime': _currentSnippetIndex < _snippetTimes.length 
-          ? _snippetTimes[_currentSnippetIndex] 
-          : null,
+      'nextSnippetTime': _snippetInterval, // Siempre 2 minutos (120 segundos)
     };
   }
   
@@ -216,7 +203,7 @@ class SnippetService {
       _appTimer?.cancel();
     } else {
       // Si se desactiva, reprogramar el siguiente snippet
-      if (_isActive && _currentSnippetIndex < _snippetTimes.length) {
+      if (_isActive) {
         _scheduleNextSnippet();
       }
     }

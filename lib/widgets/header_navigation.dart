@@ -8,12 +8,14 @@ class HeaderNavigation extends StatelessWidget {
   final VoidCallback onMenuTap;
   final String title;
   final String subtitle;
+  final VoidCallback? onProfileTap; // Callback opcional para acciones antes de navegar al perfil
 
   const HeaderNavigation({
     Key? key,
     required this.onMenuTap,
     this.title = 'BIENVENIDOS',
     this.subtitle = 'MENU',
+    this.onProfileTap,
   }) : super(key: key);
 
   // Función para verificar si estamos en la página de perfil
@@ -102,6 +104,11 @@ class HeaderNavigation extends StatelessWidget {
                     // Solo navegar si no estamos ya en la página de perfil
                     final currentRoute = ModalRoute.of(context)?.settings.name;
                     if (currentRoute != '/perfil') {
+                      // Ejecutar callback opcional (por ejemplo, para detener audio de caja)
+                      if (onProfileTap != null) {
+                        onProfileTap!();
+                      }
+                      
                       // Reproducir audio antes de navegar
                       try {
                         final audioPlayer = AudioPlayer();

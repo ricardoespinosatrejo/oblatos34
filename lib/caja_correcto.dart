@@ -22,6 +22,9 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
   final AudioPlayer _historiaAudioPlayer = AudioPlayer();
   bool _isHistoriaAudioPlaying = false;
   
+  // Índice de la imagen actual de historia (1-5)
+  int _currentHistoriaIndex = 1;
+  
   @override
   void initState() {
     super.initState();
@@ -39,14 +42,30 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
       parent: _submenuAnimationController,
       curve: Curves.easeOutCubic,
     ));
+    
+    // Escuchar cuando el audio termine para actualizar el estado y avanzar automáticamente
+    _historiaAudioPlayer.onPlayerComplete.listen((_) {
+      if (mounted) {
+        setState(() {
+          _isHistoriaAudioPlaying = false;
+        });
+        // Avanzar automáticamente a la siguiente imagen si no estamos en la última
+        if (_currentHistoriaIndex < 5) {
+          _nextHistoria();
+        }
+      }
+    });
+    
+    // Reproducir audio inicial al cargar la pantalla
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _playHistoriaAudio(_currentHistoriaIndex);
+    });
   }
   
   @override
   void deactivate() {
     // Detener el audio cuando la pantalla sale de vista
-    if (_isHistoriaAudioPlaying) {
-      _historiaAudioPlayer.stop();
-    }
+    _stopHistoriaAudio();
     super.deactivate();
   }
   
@@ -61,34 +80,52 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
     super.dispose();
   }
   
-  // Método para manejar el audio de la historia
-  void _toggleHistoriaAudio() async {
-    if (_isHistoriaAudioPlaying) {
-      // Si está reproduciéndose, detenerlo
-      await _historiaAudioPlayer.stop();
-      setState(() {
-        _isHistoriaAudioPlaying = false;
-      });
-    } else {
-      // Si no está reproduciéndose, detener cualquier otro audio y reproducir este
-      await _audioPlayer.stop(); // Detener el audio del botón central si está activo
-      try {
-        await _historiaAudioPlayer.play(AssetSource('audios/audio1-historia.mp3'));
+  // Método para reproducir el audio de la historia actual
+  void _playHistoriaAudio(int historiaIndex) async {
+    // Detener cualquier audio anterior
+    await _historiaAudioPlayer.stop();
+    await _audioPlayer.stop();
+    
+    try {
+      // Reproducir el audio correspondiente a la imagen actual
+      await _historiaAudioPlayer.play(AssetSource('images/caja/historia$historiaIndex.mp3'));
+      if (mounted) {
         setState(() {
           _isHistoriaAudioPlaying = true;
         });
-        
-        // Escuchar cuando el audio termine para actualizar el estado
-        _historiaAudioPlayer.onPlayerComplete.listen((_) {
-          if (mounted) {
-            setState(() {
-              _isHistoriaAudioPlaying = false;
-            });
-          }
-        });
-      } catch (e) {
-        print('Error al reproducir audio: $e');
       }
+    } catch (e) {
+      print('Error al reproducir audio: $e');
+    }
+  }
+  
+  // Método para navegar a la siguiente imagen
+  void _nextHistoria() {
+    if (_currentHistoriaIndex < 5) {
+      setState(() {
+        _currentHistoriaIndex++;
+      });
+      _playHistoriaAudio(_currentHistoriaIndex);
+    }
+  }
+  
+  // Método para navegar a la imagen anterior
+  void _previousHistoria() {
+    if (_currentHistoriaIndex > 1) {
+      setState(() {
+        _currentHistoriaIndex--;
+      });
+      _playHistoriaAudio(_currentHistoriaIndex);
+    }
+  }
+  
+  // Método para detener el audio de historia
+  void _stopHistoriaAudio() async {
+    await _historiaAudioPlayer.stop();
+    if (mounted) {
+      setState(() {
+        _isHistoriaAudioPlaying = false;
+      });
     }
   }
 
@@ -139,13 +176,12 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                   HeaderNavigation(
                     onMenuTap: () {
                       // Detener audio antes de navegar
-                      if (_isHistoriaAudioPlaying) {
-                        _historiaAudioPlayer.stop();
-                        setState(() {
-                          _isHistoriaAudioPlaying = false;
-                        });
-                      }
+                      _stopHistoriaAudio();
                       Navigator.pushNamed(context, '/menu');
+                    },
+                    onProfileTap: () {
+                      // Detener audio de historia antes de navegar al perfil
+                      _stopHistoriaAudio();
                     },
                     title: 'BIENVENIDOS',
                     subtitle: 'CAJA OBLATOS',
@@ -197,12 +233,7 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: () {
         // Detener audio antes de navegar
-        if (_isHistoriaAudioPlaying) {
-          _historiaAudioPlayer.stop();
-          setState(() {
-            _isHistoriaAudioPlaying = false;
-          });
-        }
+        _stopHistoriaAudio();
         Navigator.pushNamed(context, route);
       },
       child: Column(
@@ -309,136 +340,89 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                   ),
                   child: Stack(
                     children: [
-                      // Plasta de texto con scroll
+                      // Imagen de historia con flechas de navegación - directamente en el contenedor blanco
                       Positioned(
-                        bottom: 60, // Aumentado de 50 a 60 para subir el borde inferior otros 10px
-                        left: 30, // Aumentado de 20 a 30
-                        right: 30, // Aumentado de 20 a 30
-                        child: Container(
-                          height: 320, // Reducido de 330 a 320 (otros 10px menos)
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: AssetImage('assets/images/caja/plasta-texto-scroll.png'),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          child: SingleChildScrollView(
-                            padding: EdgeInsets.all(30), // Aumentado de 20 a 30
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Descubre Caja Oblatos',
-                                  style: TextStyle(
-                                    fontFamily: 'Gotham Rounded',
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFFE91E63),
-                                  ),
-                                ),
-                                SizedBox(height: 15),
-                                Text(
-                                  'PUES BIEN, LA HISTORIA DE CAJA POPULAR OBLATOS COMENZÓ EL 11 DE MAYO DE 1966.',
-                                  style: TextStyle(
-                                    fontFamily: 'Gotham Rounded',
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                SizedBox(height: 15),
-                                Text(
-                                  'En ese momento histórico, un grupo visionario de líderes comunitarios se unió con el propósito de crear una organización que fuera más allá de los servicios financieros tradicionales. Su visión era establecer una institución que ofreciera una amplia gama de servicios comunitarios, desde préstamos y ahorros hasta programas de desarrollo social y educativo.',
-                                  style: TextStyle(
-                                    fontFamily: 'Gotham Rounded',
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                    height: 1.4,
-                                  ),
-                                ),
-                                SizedBox(height: 15),
-                                Text(
-                                  'La fecha del 11 de mayo de 1966 no fue elegida al azar. Representa el momento en que se materializó un sueño colectivo de empoderamiento financiero y desarrollo comunitario. Esta fecha marca el inicio de una trayectoria que ha transformado la vida de miles de familias en la región de Oblatos y más allá.',
-                                  style: TextStyle(
-                                    fontFamily: 'Gotham Rounded',
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                    height: 1.4,
-                                  ),
-                                ),
-                                SizedBox(height: 15),
-                                Text(
-                                  'Desde sus inicios, Caja Popular Oblatos se ha distinguido por su compromiso inquebrantable con los valores cooperativos. La institución nació de la convicción de que el acceso a servicios financieros de calidad no debería ser un privilegio, sino un derecho fundamental para todos los miembros de la comunidad.',
-                                  style: TextStyle(
-                                    fontFamily: 'Gotham Rounded',
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                    height: 1.4,
-                                  ),
-                                ),
-                                SizedBox(height: 15),
-                                Text(
-                                  'La cooperativa se fundó sobre principios sólidos de democracia, igualdad, equidad y solidaridad. Cada miembro tiene voz y voto en las decisiones importantes, y los beneficios se distribuyen de manera justa entre todos los participantes. Este modelo de gobernanza ha sido fundamental para construir la confianza y la lealtad que caracterizan a la institución.',
-                                  style: TextStyle(
-                                    fontFamily: 'Gotham Rounded',
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                    height: 1.4,
-                                  ),
-                                ),
-                                SizedBox(height: 15),
-                                Text(
-                                  'A lo largo de más de cinco décadas, Caja Popular Oblatos ha evolucionado y se ha adaptado a los cambios económicos y sociales, pero siempre manteniendo su esencia cooperativa y su compromiso con la comunidad. La institución ha sido testigo y protagonista del crecimiento y desarrollo de la región, contribuyendo activamente al bienestar de sus habitantes.',
-                                  style: TextStyle(
-                                    fontFamily: 'Gotham Rounded',
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                    height: 1.4,
-                                  ),
-                                ),
-                                SizedBox(height: 15),
-                                Text(
-                                  'Hoy, Caja Popular Oblatos representa mucho más que una institución financiera. Es un símbolo de la capacidad de las comunidades para organizarse y crear soluciones sostenibles a sus necesidades. Es un ejemplo de cómo la cooperación y la solidaridad pueden transformar realidades y construir un futuro más próspero para todos.',
-                                  style: TextStyle(
-                                    fontFamily: 'Gotham Rounded',
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      
-                      // Botón de audio en el espacio entre el borde izquierdo y la caja de texto
-                      Positioned(
-                        left: -5, // Entre el borde izquierdo (0) y el inicio de la caja de texto (left: 30)
-                        bottom: 60 + 160, // Centrado verticalmente con la caja de texto (bottom: 60, height: 320, centro = 60 + 160)
-                        child: GestureDetector(
-                          onTap: _toggleHistoriaAudio,
-                          child: Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: _isHistoriaAudioPlaying 
-                                  ? Color(0xFFE91E63).withOpacity(0.3) 
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: _isHistoriaAudioPlaying 
-                                    ? Color(0xFFE91E63) 
-                                    : Colors.transparent,
-                                width: 2,
+                        bottom: 20, // Reducido de 60 a 20 para más espacio
+                        left: 0, // Sin margen izquierdo para ocupar todo el ancho
+                        right: 0, // Sin margen derecho para ocupar todo el ancho
+                        top: 200, // Reducido de 260 a 200 para más espacio vertical
+                        child: Stack(
+                          clipBehavior: Clip.hardEdge,
+                          children: [
+                            // Imagen de historia actual - ocupa todo el espacio disponible
+                            Positioned.fill(
+                              child: Image.asset(
+                                'assets/images/caja/historia$_currentHistoriaIndex.png',
+                                fit: BoxFit.fill,
                               ),
                             ),
-                            child: Image.asset(
-                              'assets/audios/audio1-historia.png',
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.contain,
+                            
+                            // Flecha derecha (pegada al borde derecho de la imagen)
+                            if (_currentHistoriaIndex < 5)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                bottom: 0,
+                                child: GestureDetector(
+                                  onTap: _nextHistoria,
+                                  child: Container(
+                                    width: 50,
+                                    alignment: Alignment.center,
+                                    child: Image.asset(
+                                      'assets/images/caja/flecha-derecha.png',
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            
+                            // Flecha izquierda (pegada al borde izquierdo de la imagen)
+                            if (_currentHistoriaIndex > 1)
+                              Positioned(
+                                left: 0,
+                                top: 0,
+                                bottom: 0,
+                                child: GestureDetector(
+                                  onTap: _previousHistoria,
+                                  child: Container(
+                                    width: 50,
+                                    alignment: Alignment.center,
+                                    child: Image.asset(
+                                      'assets/images/caja/flecha-izquierda.png',
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            
+                            // Indicadores de puntos (bolitas) en la parte inferior
+                            Positioned(
+                              bottom: 10,
+                              left: 0,
+                              right: 0,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(5, (index) {
+                                  final isActive = (index + 1) == _currentHistoriaIndex;
+                                  return Container(
+                                    margin: EdgeInsets.symmetric(horizontal: 4),
+                                    width: isActive ? 12 : 8,
+                                    height: isActive ? 12 : 8,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isActive 
+                                          ? Color(0xFFE91E63) // Color rosa/morado cuando está activa
+                                          : Colors.white.withOpacity(0.5), // Color blanco semitransparente cuando no está activa
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 1,
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
                     ],
@@ -631,12 +615,7 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                         GestureDetector(
                           onTap: () {
                             // Detener audio antes de navegar
-                            if (_isHistoriaAudioPlaying) {
-                              _historiaAudioPlayer.stop();
-                              setState(() {
-                                _isHistoriaAudioPlaying = false;
-                              });
-                            }
+                            _stopHistoriaAudio();
                             Navigator.pushNamed(context, '/juego');
                           },
                           child: Image.asset(
@@ -648,12 +627,7 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                         GestureDetector(
                           onTap: () {
                             // Detener audio antes de navegar
-                            if (_isHistoriaAudioPlaying) {
-                              _historiaAudioPlayer.stop();
-                              setState(() {
-                                _isHistoriaAudioPlaying = false;
-                              });
-                            }
+                            _stopHistoriaAudio();
                             Navigator.pushNamed(context, '/calculadora');
                           },
                           child: Image.asset(
