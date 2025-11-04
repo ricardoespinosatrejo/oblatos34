@@ -62,14 +62,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_email'])) {
     $subject = 'Test SMTP - Oblatos 34';
     $message = 'Este es un email de prueba. Si recibes este mensaje, la configuración SMTP está funcionando correctamente.';
     
-    $result = sendEmailWithSMTP($testEmail, $subject, $message, $smtpConfig);
-    
-    if ($result) {
-        echo "<p style='color:green'><strong>✓ Email enviado exitosamente a: $testEmail</strong></p>";
-        echo "<p>Revisa tu bandeja de entrada (y carpeta de spam) en unos minutos.</p>";
-    } else {
-        echo "<p style='color:red'><strong>✗ Error al enviar email</strong></p>";
-        echo "<p>Revisa los logs de error del servidor o habilita debug en smtp_config.php</p>";
+    try {
+        // Capturar output de debug si está habilitado
+        ob_start();
+        $result = sendEmailWithSMTP($testEmail, $subject, $message, $smtpConfig);
+        $debugOutput = ob_get_clean();
+        
+        if ($result) {
+            echo "<p style='color:green'><strong>✓ Email enviado exitosamente a: $testEmail</strong></p>";
+            echo "<p>Revisa tu bandeja de entrada (y carpeta de spam) en unos minutos.</p>";
+            if ($debugOutput) {
+                echo "<h4>Debug Output:</h4><pre>" . htmlspecialchars($debugOutput) . "</pre>";
+            }
+        } else {
+            echo "<p style='color:red'><strong>✗ Error al enviar email</strong></p>";
+            if ($debugOutput) {
+                echo "<h4>Debug Output:</h4><pre>" . htmlspecialchars($debugOutput) . "</pre>";
+            }
+            echo "<p>Revisa los logs de error del servidor o habilita debug en smtp_config.php</p>";
+        }
+    } catch (Exception $e) {
+        echo "<p style='color:red'><strong>✗ Excepción capturada:</strong></p>";
+        echo "<pre style='background:#f0f0f0;padding:10px;border:1px solid #ccc;'>" . htmlspecialchars($e->getMessage()) . "</pre>";
+        echo "<p><strong>Stack trace:</strong></p>";
+        echo "<pre style='background:#f0f0f0;padding:10px;border:1px solid #ccc;'>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
     }
 } else {
     ?>

@@ -90,7 +90,16 @@ try {
                "Si no solicitaste el cambio, ignora este mensaje.";
 
     // Enviar correo usando SMTP
-    sendEmailWithSMTP($to, $subject, $message, $smtpConfig);
+    try {
+        $emailSent = sendEmailWithSMTP($to, $subject, $message, $smtpConfig);
+        if (!$emailSent) {
+            // Log del error pero no exponerlo al usuario por seguridad
+            error_log("Error enviando email de recuperación a: $to");
+        }
+    } catch (Exception $e) {
+        // Log del error pero no exponerlo al usuario por seguridad
+        error_log("Excepción enviando email de recuperación: " . $e->getMessage());
+    }
 
     $genericOk();
 } catch (Throwable $e) {

@@ -37,13 +37,16 @@ function sendEmailWithSMTP($to, $subject, $message, $config) {
         require_once $phpmailerPath;
         
         // Intentar cargar SMTP.php y Exception.php desde diferentes ubicaciones
+        // Si está en src/, los archivos están en el mismo directorio
         $smtpPaths = [
-            $basePath . '/SMTP.php',
-            $basePath . '/src/SMTP.php',
+            $basePath . '/SMTP.php',  // Mismo directorio que PHPMailer.php
+            dirname($basePath) . '/SMTP.php',  // Un nivel arriba
+            dirname($basePath) . '/src/SMTP.php',  // En src/ un nivel arriba
         ];
         $exceptionPaths = [
-            $basePath . '/Exception.php',
-            $basePath . '/src/Exception.php',
+            $basePath . '/Exception.php',  // Mismo directorio que PHPMailer.php
+            dirname($basePath) . '/Exception.php',  // Un nivel arriba
+            dirname($basePath) . '/src/Exception.php',  // En src/ un nivel arriba
         ];
         
         foreach ($smtpPaths as $path) {
@@ -62,18 +65,23 @@ function sendEmailWithSMTP($to, $subject, $message, $config) {
         
         // Crear instancia de PHPMailer (probamos diferentes namespaces)
         try {
+            $mail = null;
             if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
                 $mail = new PHPMailer\PHPMailer\PHPMailer(true);
             } elseif (class_exists('PHPMailer')) {
                 $mail = new PHPMailer(true);
             } else {
-                throw new Exception('PHPMailer class not found');
+                throw new \Exception('PHPMailer class not found. Available classes: ' . implode(', ', get_declared_classes()));
             }
-        } catch (Exception $e) {
+            
+            if (!$mail) {
+                throw new \Exception('No se pudo crear instancia de PHPMailer');
+            }
+        } catch (\Exception $e) {
             if ($config['debug']) {
                 error_log("Error inicializando PHPMailer: " . $e->getMessage());
             }
-            return sendEmailWithSocketSMTP($to, $subject, $message, $config);
+            throw new \Exception("Error inicializando PHPMailer: " . $e->getMessage());
         }
         
         try {
@@ -88,9 +96,12 @@ function sendEmailWithSMTP($to, $subject, $message, $config) {
             $mail->CharSet = 'UTF-8';
             $mail->Timeout = $config['timeout'];
             
+            // Configuración de debug
             if ($config['debug']) {
-                $mail->SMTPDebug = 2;
-                $mail->Debugoutput = 'error_log';
+                $mail->SMTPDebug = 2; // Mostrar información detallada
+                $mail->Debugoutput = function($str, $level) {
+                    error_log("PHPMailer Debug [$level]: $str");
+                };
             }
             
             // Remitente y destinatario
@@ -104,11 +115,21 @@ function sendEmailWithSMTP($to, $subject, $message, $config) {
             
             $mail->send();
             return true;
-        } catch (Exception $e) {
-            if ($config['debug']) {
-                error_log("Error PHPMailer: " . ($mail->ErrorInfo ?? $e->getMessage()));
+        } catch (\Exception $e) {
+            $errorMsg = '';
+            if (isset($mail) && property_exists($mail, 'ErrorInfo')) {
+                $errorMsg = $mail->ErrorInfo;
+            } else {
+                $errorMsg = $e->getMessage();
             }
-            return false;
+            
+            if ($config['debug']) {
+                error_log("Error PHPMailer: " . $errorMsg);
+                error_log("Stack trace: " . $e->getTraceAsString());
+            }
+            
+            // Lanzar excepción con más información para que el script de prueba la capture
+            throw new Exception("PHPMailer Error: " . $errorMsg);
         }
     }
     
