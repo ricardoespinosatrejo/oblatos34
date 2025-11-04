@@ -104,14 +104,28 @@ function sendEmailWithSMTP($to, $subject, $message, $config) {
                 };
             }
             
+            // Mejoras para Gmail y otros proveedores
+            $mail->XMailer = 'Oblatos 34 App'; // Identificador del remitente
+            $mail->Priority = 3; // Prioridad normal (1=alta, 3=normal, 5=baja)
+            
             // Remitente y destinatario
             $mail->setFrom($config['from_email'], $config['from_name']);
             $mail->addAddress($to);
+            
+            // Agregar Reply-To (importante para Gmail)
+            $mail->addReplyTo($config['from_email'], $config['from_name']);
+            
+            // Headers adicionales para mejorar la entrega
+            $mail->addCustomHeader('List-Unsubscribe', '<mailto:' . $config['from_email'] . '>');
+            $mail->addCustomHeader('X-Auto-Response-Suppress', 'All');
             
             // Contenido
             $mail->isHTML(false);
             $mail->Subject = $subject;
             $mail->Body = $message;
+            
+            // Codificación mejorada
+            $mail->Encoding = 'base64'; // Mejor compatibilidad con Gmail
             
             $mail->send();
             return true;

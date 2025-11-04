@@ -80,14 +80,17 @@ try {
     $smtpConfig = require __DIR__ . '/smtp_config.php';
     require_once __DIR__ . '/phpmailer_helper.php';
 
-    // Preparar email
+    // Preparar email con mejor formato para Gmail
     $to = $user['email'];
-    $subject = 'Restablecer tu password - Oblatos 34';
+    $subject = 'Restablecer tu contraseña - Oblatos 34';
     $message = "Hola {$user['nombre_usuario']},\n\n".
-               "Recibimos una solicitud para restablecer tu password.\n".
-               "Usa este enlace para crear un nuevo password (válido 1 hora):\n\n".
+               "Recibimos una solicitud para restablecer la contraseña de tu cuenta.\n\n".
+               "Para crear una nueva contraseña, haz clic en el siguiente enlace:\n".
                "$resetLink\n\n".
-               "Si no solicitaste el cambio, ignora este mensaje.";
+               "Este enlace será válido por 1 hora.\n\n".
+               "Si no solicitaste este cambio, puedes ignorar este mensaje de forma segura.\n\n".
+               "Saludos,\n".
+               "Equipo Oblatos 34";
 
     // Enviar correo usando SMTP
     try {
