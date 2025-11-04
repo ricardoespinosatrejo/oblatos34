@@ -76,7 +76,11 @@ try {
     $baseUrl = 'https://zumuradigital.com/app-oblatos-login';
     $resetLink = $baseUrl . '/reset_password.php?token=' . urlencode($token);
 
-    // Enviar correo (mail simple; si el hosting requiere SMTP, habrá que ajustar)
+    // Cargar configuración SMTP y helper
+    $smtpConfig = require __DIR__ . '/smtp_config.php';
+    require_once __DIR__ . '/phpmailer_helper.php';
+
+    // Preparar email
     $to = $user['email'];
     $subject = 'Restablecer tu password - Oblatos 34';
     $message = "Hola {$user['nombre_usuario']},\n\n".
@@ -84,11 +88,9 @@ try {
                "Usa este enlace para crear un nuevo password (válido 1 hora):\n\n".
                "$resetLink\n\n".
                "Si no solicitaste el cambio, ignora este mensaje.";
-    $headers = 'From: no-reply@zumuradigital.com' . "\r\n" .
-               'Content-Type: text/plain; charset=UTF-8';
 
-    // Intentar enviar; no exponemos si falla para no filtrar info
-    @mail($to, $subject, $message, $headers);
+    // Enviar correo usando SMTP
+    sendEmailWithSMTP($to, $subject, $message, $smtpConfig);
 
     $genericOk();
 } catch (Throwable $e) {
