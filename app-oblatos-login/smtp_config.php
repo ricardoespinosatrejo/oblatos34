@@ -20,6 +20,6 @@ return [
     
     // Configuración adicional
     'timeout' => 30, // Timeout en segundos
-    'debug' => true, // Cambiar a true para ver logs de depuración (temporal para diagnóstico)
+    'debug' => false, // Cambiar a true para ver logs de depuración
 ];
 

@@ -1,13 +1,24 @@
 <?php
 /**
  * Script de prueba para verificar configuración SMTP y PHPMailer
- * Accede desde: https://zumuradigital.com/app-oblatos-login/test_smtp.php
+ * IMPORTANTE: Eliminar o proteger este archivo en producción
+ * Puedes protegerlo con .htaccess o eliminarlo después de las pruebas
  */
+
+// Protección básica: requerir autenticación o IP específica
+// Descomenta las siguientes líneas para proteger este script:
+/*
+$allowedIPs = ['TU_IP_AQUI']; // Cambiar por tu IP
+if (!in_array($_SERVER['REMOTE_ADDR'], $allowedIPs)) {
+    die('Acceso denegado');
+}
+*/
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 echo "<h2>Test SMTP Configuration</h2>";
+echo "<p><strong style='color:orange'>⚠️ ADVERTENCIA:</strong> Este archivo debería eliminarse o protegerse en producción.</p>";
 
 // Cargar configuración
 $smtpConfig = require __DIR__ . '/smtp_config.php';
@@ -102,4 +113,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['test_email'])) {
 echo "<hr>";
 echo "<p><small>Para ver logs detallados, habilita 'debug' => true en smtp_config.php</small></p>";
 ?>
-
