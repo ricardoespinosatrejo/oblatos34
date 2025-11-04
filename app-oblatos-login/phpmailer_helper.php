@@ -13,12 +13,68 @@ function sendEmailWithSMTP($to, $subject, $message, $config) {
     }
     
     // Intentar usar PHPMailer si está disponible
-    if (file_exists(__DIR__ . '/PHPMailer/PHPMailer.php')) {
-        require_once __DIR__ . '/PHPMailer/PHPMailer.php';
-        require_once __DIR__ . '/PHPMailer/SMTP.php';
-        require_once __DIR__ . '/PHPMailer/Exception.php';
+    // Buscar en diferentes ubicaciones posibles
+    $phpmailerPaths = [
+        __DIR__ . '/PHPMailer/PHPMailer.php',
+        __DIR__ . '/PHPMailer-7.0.0/src/PHPMailer.php',
+        __DIR__ . '/PHPMailer-7.0.0/PHPMailer.php',
+        __DIR__ . '/vendor/phpmailer/phpmailer/src/PHPMailer.php',
+    ];
+    
+    $phpmailerPath = null;
+    foreach ($phpmailerPaths as $path) {
+        if (file_exists($path)) {
+            $phpmailerPath = $path;
+            break;
+        }
+    }
+    
+    if ($phpmailerPath) {
+        // Determinar la ruta base de PHPMailer
+        $basePath = dirname($phpmailerPath);
         
-        $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+        // Cargar archivos según la estructura encontrada
+        require_once $phpmailerPath;
+        
+        // Intentar cargar SMTP.php y Exception.php desde diferentes ubicaciones
+        $smtpPaths = [
+            $basePath . '/SMTP.php',
+            $basePath . '/src/SMTP.php',
+        ];
+        $exceptionPaths = [
+            $basePath . '/Exception.php',
+            $basePath . '/src/Exception.php',
+        ];
+        
+        foreach ($smtpPaths as $path) {
+            if (file_exists($path)) {
+                require_once $path;
+                break;
+            }
+        }
+        
+        foreach ($exceptionPaths as $path) {
+            if (file_exists($path)) {
+                require_once $path;
+                break;
+            }
+        }
+        
+        // Crear instancia de PHPMailer (probamos diferentes namespaces)
+        try {
+            if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
+                $mail = new PHPMailer\PHPMailer\PHPMailer(true);
+            } elseif (class_exists('PHPMailer')) {
+                $mail = new PHPMailer(true);
+            } else {
+                throw new Exception('PHPMailer class not found');
+            }
+        } catch (Exception $e) {
+            if ($config['debug']) {
+                error_log("Error inicializando PHPMailer: " . $e->getMessage());
+            }
+            return sendEmailWithSocketSMTP($to, $subject, $message, $config);
+        }
         
         try {
             // Configuración del servidor
@@ -50,7 +106,7 @@ function sendEmailWithSMTP($to, $subject, $message, $config) {
             return true;
         } catch (Exception $e) {
             if ($config['debug']) {
-                error_log("Error PHPMailer: " . $mail->ErrorInfo);
+                error_log("Error PHPMailer: " . ($mail->ErrorInfo ?? $e->getMessage()));
             }
             return false;
         }
