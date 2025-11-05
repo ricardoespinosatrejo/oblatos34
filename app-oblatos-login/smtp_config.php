@@ -3,10 +3,10 @@
 // Ajusta estos valores según tu proveedor de hosting/correo
 
 return [
-    'enabled' => true, // Cambiar a false para deshabilitar SMTP y usar mail() nativo
+    'enabled' => false, // Cambiar a false para deshabilitar SMTP y usar mail() nativo
     
     // Configuración SMTP
-    'host' => 'smtp.zumuradigital.com', // Cambiar a 'mail.zumuradigital.com' si smtp no funciona
+    'host' => 'zumuradigital.com', // Cambiar a 'mail.zumuradigital.com' si smtp no funciona
     'port' => 465, // Puerto común: 587 (TLS), 465 (SSL), 25 (sin cifrado)
     'encryption' => 'ssl', // 'tls', 'ssl', o '' (sin cifrado)
     

@@ -91,3 +91,9 @@ Esto mostrará logs de depuración en el error_log de PHP.
 - **Yahoo**: smtp.mail.yahoo.com:587 (TLS)
 - **cPanel**: Consulta con tu hosting, generalmente smtp.tu-dominio.com:587
 
+
+
+
+
+
+

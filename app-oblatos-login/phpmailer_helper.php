@@ -96,11 +96,19 @@ function sendEmailWithSMTP($to, $subject, $message, $config) {
             $mail->CharSet = 'UTF-8';
             $mail->Timeout = $config['timeout'];
             
-            // Configuración de debug
+            // Configuración de debug - capturar output en variable global para poder mostrarlo
+            global $phpmailer_debug_output;
+            if (!isset($phpmailer_debug_output)) {
+                $phpmailer_debug_output = '';
+            }
+            
             if ($config['debug']) {
-                $mail->SMTPDebug = 2; // Mostrar información detallada
+                $mail->SMTPDebug = 3; // Nivel 3: mostrar TODO (conexión, comandos, respuestas)
                 $mail->Debugoutput = function($str, $level) {
-                    error_log("PHPMailer Debug [$level]: $str");
+                    global $phpmailer_debug_output;
+                    $phpmailer_debug_output .= "[$level] " . trim($str) . "\n";
+                    // También enviar a error_log por si acaso
+                    error_log("PHPMailer Debug [$level]: " . trim($str));
                 };
             }
             
@@ -127,7 +135,37 @@ function sendEmailWithSMTP($to, $subject, $message, $config) {
             // Codificación mejorada
             $mail->Encoding = 'base64'; // Mejor compatibilidad con Gmail
             
-            $mail->send();
+            // Intentar enviar y verificar el resultado
+            $sendResult = $mail->send();
+            
+            // Capturar debug output si está disponible
+            global $phpmailer_debug_output;
+            $debugInfo = '';
+            if (isset($phpmailer_debug_output) && !empty($phpmailer_debug_output)) {
+                $debugInfo = $phpmailer_debug_output;
+                // Limpiar para el próximo envío
+                $phpmailer_debug_output = '';
+            }
+            
+            if (!$sendResult) {
+                $errorInfo = $mail->ErrorInfo ?? 'Error desconocido al enviar email';
+                if ($config['debug']) {
+                    error_log("PHPMailer send() retornó false: " . $errorInfo);
+                }
+                $errorMsg = "Error al enviar email: " . $errorInfo;
+                if ($debugInfo) {
+                    $errorMsg .= "\n\nDebug Info:\n" . $debugInfo;
+                }
+                throw new Exception($errorMsg);
+            }
+            
+            // Si el envío fue exitoso pero queremos el debug output, guardarlo
+            if ($config['debug'] && $debugInfo) {
+                // Guardar en una variable global para que el script de prueba pueda acceder
+                global $phpmailer_last_debug;
+                $phpmailer_last_debug = $debugInfo;
+            }
+            
             return true;
         } catch (\Exception $e) {
             $errorMsg = '';

@@ -2,17 +2,33 @@
 // Sirve el formulario (GET con token) y procesa el cambio (POST con token y new_password)
 
 function render_form($token, $error = '', $success = '') {
-    // HTML mínimo embebido
+    // HTML con diseño mejorado
     echo '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
         . '<title>Restablecer password</title>'
-        . '<style>body{font-family:sans-serif;background:#0A0E21;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}'
-        . '.card{background:#161351;padding:24px;border-radius:12px;max-width:360px;width:92%;box-shadow:0 8px 24px rgba(0,0,0,0.3)}'
-        . 'label{display:block;margin:12px 0 8px;color:#fff}input{width:100%;padding:12px;border-radius:8px;border:1px solid #3949ab;background:#0d0b3a;color:#fff}'
-        . '.btn{margin-top:18px;width:100%;padding:12px;border:none;border-radius:24px;background:linear-gradient(90deg,#FF1744,#E91E63);color:#fff;font-weight:700;cursor:pointer}'
-        . '.msg{margin:8px 0;padding:10px;border-radius:8px;font-size:14px}'
-        . '.err{background:#b00020} .ok{background:#2e7d32}'
+        . '<style>'
+        . 'body{font-family:sans-serif;margin:0;padding:0;height:100vh;display:flex;align-items:center;justify-content:center;'
+        . 'background:linear-gradient(180deg, #1A1B3E 0%, #2D1B69 30%, #6B2C91 70%, #E91E63 100%);'
+        . 'background-attachment:fixed;}'
+        . '.card{background:rgba(22,19,81,0.95);padding:32px 24px;border-radius:16px;max-width:400px;width:92%;'
+        . 'box-shadow:0 12px 40px rgba(0,0,0,0.5);backdrop-filter:blur(10px);text-align:center;}'
+        . '.logo-container{margin-bottom:24px;}'
+        . '.logo-container img{max-width:120px;height:auto;border-radius:12px;}'
+        . 'h1{font-size:28px;font-weight:bold;color:#fff;margin:0 0 24px 0;text-align:center;letter-spacing:1px;}'
+        . 'label{display:block;margin:16px 0 8px;color:#fff;text-align:left;font-size:14px;}'
+        . 'input{width:100%;padding:14px;border-radius:10px;border:2px solid #3949ab;background:#0d0b3a;color:#fff;'
+        . 'box-sizing:border-box;font-size:15px;transition:border-color 0.3s;}'
+        . 'input:focus{outline:none;border-color:#E91E63;}'
+        . '.btn{margin-top:24px;width:100%;padding:14px;border:none;border-radius:24px;'
+        . 'background:linear-gradient(90deg,#FF1744,#E91E63);color:#fff;font-weight:700;cursor:pointer;'
+        . 'font-size:16px;transition:transform 0.2s,box-shadow 0.2s;}'
+        . '.btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(233,30,99,0.4);}'
+        . '.btn:active{transform:translateY(0);}'
+        . '.msg{margin:12px 0;padding:12px;border-radius:8px;font-size:14px;text-align:left;}'
+        . '.err{background:#b00020;color:#fff;}'
+        . '.ok{background:#2e7d32;color:#fff;text-align:center;}'
         . '</style></head><body><div class="card">'
-        . '<h2 style="margin:0 0 12px">Restablecer password</h2>';
+        . '<div class="logo-container"><img src="anty.png" alt="Anty"></div>'
+        . '<h1>App Oblatos</h1>';
     if ($error) echo '<div class="msg err">' . htmlspecialchars($error) . '</div>';
     if ($success) echo '<div class="msg ok">' . htmlspecialchars($success) . '</div>';
     if (!$success) {
@@ -114,5 +130,10 @@ try {
     render_form('', 'Error del servidor');
 }
 ?>
+
+
+
+
+
 
 
