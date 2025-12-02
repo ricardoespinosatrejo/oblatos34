@@ -180,3 +180,23 @@ Después de agregar el registro, espera **15 minutos a 2 horas** y verifica:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -100,3 +100,23 @@ echo "<p><a href='test_smtp.php'>← Volver a prueba SMTP</a></p>";
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
