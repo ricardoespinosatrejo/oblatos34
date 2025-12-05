@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking de Racha Diaria - Caja Oblatos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 10px; 
+            font-size: 32px;
+        }
+        .subtitle { 
+            color: #666; 
+            font-size: 16px;
+        }
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+        }
+        .loading, .error {
+            text-align: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #666;
+        }
+        .error {
+            color: #ff6b6b;
+        }
+        .ranking-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .ranking-item {
+            display: grid;
+            grid-template-columns: 60px 1fr 150px 120px;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            transition: all 0.3s;
+            border-left: 5px solid #ddd;
+        }
+        .ranking-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+        .ranking-item.position-1 {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            border-left-color: #ffd700;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+        }
+        .ranking-item.position-2 {
+            background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+            border-left-color: #c0c0c0;
+            box-shadow: 0 5px 15px rgba(192, 192, 192, 0.3);
+        }
+        .ranking-item.position-3 {
+            background: linear-gradient(135deg, #cd7f32 0%, #e6a857 100%);
+            border-left-color: #cd7f32;
+            box-shadow: 0 5px 15px rgba(205, 127, 50, 0.3);
+        }
+        .ranking-position {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+        .ranking-item.position-1 .ranking-position,
+        .ranking-item.position-2 .ranking-position,
+        .ranking-item.position-3 .ranking-position {
+            color: #333;
+        }
+        .ranking-username {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        .ranking-points {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            text-align: right;
+        }
+        .ranking-days {
+            font-size: 14px;
+            color: #666;
+            text-align: right;
+        }
+        .ranking-item.position-1 .ranking-points,
+        .ranking-item.position-2 .ranking-points,
+        .ranking-item.position-3 .ranking-points {
+            color: #333;
+        }
+        @media (max-width: 768px) {
+            .ranking-item {
+                grid-template-columns: 50px 1fr;
+                gap: 10px;
+            }
+            .ranking-points, .ranking-days {
+                grid-column: 2;
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Ranking de Racha Diaria</h1>
+            <p class="subtitle">Usuarios con mejor racha diaria</p>
+        </div>
+        
+        <button class="refresh-btn" onclick="cargarRanking()">🔄 Actualizar Ranking</button>
+        
+        <div id="loading" class="loading">
+            🔄 Cargando ranking de racha diaria...
+        </div>
+        
+        <div id="error" class="error" style="display: none;">
+            ❌ Error al cargar el ranking. Por favor, intenta nuevamente.
+        </div>
+        
+        <div id="ranking-content" style="display: none;">
+            <!-- Se llenará dinámicamente -->
+        </div>
+    </div>
+    
+    <script>
+        // Cargar ranking al iniciar
+        window.addEventListener('load', function() {
+            cargarRanking();
+        });
+        
+        async function cargarRanking() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const rankingContent = document.getElementById('ranking-content');
+            
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            rankingContent.style.display = 'none';
+            
+            try {
+                const response = await fetch('get_racha_ranking.php');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await response.json();
+                if (data.success && data.usuarios && data.usuarios.length > 0) {
+                    mostrarRanking(data.usuarios);
+                    loading.style.display = 'none';
+                    rankingContent.style.display = 'block';
+                } else {
+                    throw new Error(data.message || 'No se encontraron usuarios');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error cargando ranking:', error);
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = `❌ Error: ${error.message}`;
+            }
+        }
+        
+        function mostrarRanking(usuarios) {
+            const rankingContent = document.getElementById('ranking-content');
+            
+            const html = `
+                <div class="ranking-list">
+                    ${usuarios.map((usuario, index) => {
+                        const position = index + 1;
+                        let positionClass = '';
+                        if (position === 1) positionClass = 'position-1';
+                        else if (position === 2) positionClass = 'position-2';
+                        else if (position === 3) positionClass = 'position-3';
+                        
+                        return `
+                            <div class="ranking-item ${positionClass}">
+                                <div class="ranking-position">${position}</div>
+                                <div class="ranking-username">${usuario.nombre_usuario}</div>
+                                <div class="ranking-points">${usuario.racha_points || 0} pts</div>
+                                <div class="ranking-days">${usuario.racha_dias || 0} días</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            
+            rankingContent.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
+

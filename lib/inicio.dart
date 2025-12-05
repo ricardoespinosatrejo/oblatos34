@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'menu.dart';
 import 'services/snippet_service.dart';
 import 'user_manager.dart';
+import 'utils/challenge_helper.dart';
 
 void main() {
   runApp(const MyApp());
@@ -225,12 +226,16 @@ class _InicioPageState extends State<InicioPage> {
           // NUEVO: Otorgar puntos de sesión diaria a usuarios nuevos desde el primer registro
           await _actualizarSesionDiaria(userManager);
           
-          // Reanudar snippets y navegar al menú
+          // Reanudar snippets
           try { SnippetService().setGameOrCalculatorActive(false); } catch (_) {}
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
-          );
+          
+          // Navegar al menú (el reto se mostrará automáticamente en HomeScreen)
+          if (context.mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreen()),
+            );
+          }
         } else {
           // Error en el registro
           ScaffoldMessenger.of(context).showSnackBar(
@@ -336,14 +341,34 @@ class _InicioPageState extends State<InicioPage> {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
+        print('🎯 Respuesta completa: $responseData');
         if (responseData['success'] == true) {
+          // Actualizar puntos localmente desde la respuesta del servidor
+          if (responseData['data'] != null) {
+            final data = responseData['data'];
+            print('🎯 Datos recibidos: $data');
+            if (data['racha_points'] != null) {
+              final rachaPoints = int.tryParse(data['racha_points'].toString()) ?? 0;
+              print('🎯 Actualizando racha_points a: $rachaPoints');
+              userManager.updateRachaPoints(rachaPoints);
+            }
+            if (data['racha_dias'] != null) {
+              // Actualizar racha_dias también
+              final rachaDias = int.tryParse(data['racha_dias'].toString()) ?? 0;
+              print('🎯 Actualizando racha_dias a: $rachaDias');
+              // Actualizar en UserManager para que se refleje en la UI
+              userManager.updateRachaDias(rachaDias);
+            }
+          }
+          // También refrescar desde la base de datos para asegurar sincronización
           await userManager.refreshAppPoints();
-          print('✅ Sesión diaria sincronizada');
+          print('✅ Sesión diaria sincronizada. RachaPoints final: ${userManager.rachaPoints}, RachaDias: ${userManager.rachaDias}');
         } else {
           print('❌ Error en respuesta de sesión diaria: ${responseData['error']}');
         }
       } else {
         print('❌ Error HTTP actualizando sesión diaria: ${response.statusCode}');
+        print('❌ Respuesta: ${response.body}');
       }
     } catch (e) {
       print('❌ Error actualizando sesión diaria: $e');
@@ -405,12 +430,16 @@ class _InicioPageState extends State<InicioPage> {
           // NUEVO: Actualizar sesión diaria automáticamente al hacer login
           await _actualizarSesionDiaria(userManager);
           
-          // Reanudar snippets y navegar al menú
+          // Reanudar snippets
           try { SnippetService().setGameOrCalculatorActive(false); } catch (_) {}
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
-          );
+          
+          // Navegar al menú (el reto se mostrará automáticamente en HomeScreen)
+          if (context.mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreen()),
+            );
+          }
         } else {
           // Error en el login
           ScaffoldMessenger.of(context).showSnackBar(

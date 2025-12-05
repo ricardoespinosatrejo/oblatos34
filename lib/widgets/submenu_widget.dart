@@ -82,7 +82,7 @@ class _SubmenuWidgetState extends State<SubmenuWidget> with TickerProviderStateM
       children: [
         // Botón central para activar el submenu
         Positioned(
-          bottom: 98,
+          bottom: 0,
           left: 0,
           right: 0,
           child: Center(

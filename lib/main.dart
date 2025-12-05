@@ -14,6 +14,7 @@ import 'videoblog.dart' as videoblog;
 import 'perfil.dart';
 import 'juego.dart';
 import 'calculadora.dart';
+import 'rachacoop.dart';
 import 'user_manager.dart';
 import 'widgets/global_snippet_wrapper.dart';
 
@@ -60,6 +61,7 @@ class MyApp extends StatelessWidget {
           '/perfil': (context) => PerfilScreen(),
           '/juego': (context) => GameScreen(),
           '/calculadora': (context) => CalculadoraScreen(),
+          '/rachacoop': (context) => RachacoopScreen(),
         },
         onGenerateRoute: (settings) {
           // Transición personalizada de izquierda a derecha para ir al menú

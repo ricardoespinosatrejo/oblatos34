@@ -7,7 +7,7 @@ class CajaScreen extends StatefulWidget {
   _CajaScreenState createState() => _CajaScreenState();
 }
 
-class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
+class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin, WidgetsBindingObserver {
   bool _showFicha = true; // Controla si mostrar la ficha o la historia
   
   // Variables para el submenu
@@ -28,6 +28,9 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    
+    // Registrar observer para detectar cambios en el estado de la app
+    WidgetsBinding.instance.addObserver(this);
     
     // Inicializar controlador de animación del submenu
     _submenuAnimationController = AnimationController(
@@ -63,6 +66,14 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
   }
   
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Detener audio cuando la app va al background o se cierra
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive || state == AppLifecycleState.detached) {
+      _stopHistoriaAudio();
+    }
+  }
+  
+  @override
   void deactivate() {
     // Detener el audio cuando la pantalla sale de vista
     _stopHistoriaAudio();
@@ -71,7 +82,11 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
   
   @override
   void dispose() {
+    // Remover observer
+    WidgetsBinding.instance.removeObserver(this);
+    
     // Detener y limpiar los audios antes de destruir el widget
+    _stopHistoriaAudio();
     _historiaAudioPlayer.stop();
     _audioPlayer.stop();
     _submenuAnimationController.dispose();
@@ -121,11 +136,26 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
   
   // Método para detener el audio de historia
   void _stopHistoriaAudio() async {
-    await _historiaAudioPlayer.stop();
-    if (mounted) {
-      setState(() {
-        _isHistoriaAudioPlaying = false;
-      });
+    try {
+      // Pausar primero para detener inmediatamente
+      await _historiaAudioPlayer.pause();
+      // Luego detener completamente
+      await _historiaAudioPlayer.stop();
+      // También detener el otro audio player por si acaso
+      await _audioPlayer.stop();
+      if (mounted) {
+        setState(() {
+          _isHistoriaAudioPlaying = false;
+        });
+      }
+    } catch (e) {
+      print('Error al detener audio: $e');
+      // Asegurarse de que el estado se actualice incluso si hay un error
+      if (mounted) {
+        setState(() {
+          _isHistoriaAudioPlaying = false;
+        });
+      }
     }
   }
 
@@ -183,8 +213,9 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
                       // Detener audio de historia antes de navegar al perfil
                       _stopHistoriaAudio();
                     },
-                    title: 'BIENVENIDOS',
-                    subtitle: 'CAJA OBLATOS',
+                    title: 'SECCIÓN',
+                    subtitle: 'HISTORIA',
+                    leftPadding: 15,
                   ),
                   
                   // Contenido específico de la pantalla de caja
@@ -197,112 +228,6 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin {
             
             // Submenu (se muestra cuando se activa)
             if (_isSubmenuVisible) _buildSubmenu(),
-            
-            // Menú inferior rojo (debe estar al final para estar por encima del submenú)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 98,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/menu/menu-barra.png'),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildNavItem('m-icono1.png', 'Caja\nOblatos', '/caja'),
-                    _buildNavItem('m-icono2.png', 'Agentes\nCambio', '/agentes-cambio'),
-                    _buildCenterNavItem('m-icono3.png'),
-                    _buildNavItem('m-icono4.png', 'Eventos', '/eventos'),
-                    _buildNavItem('m-icono5.png', 'Video\nBlog', '/video-blog'),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(String iconPath, String label, String route) {
-    return GestureDetector(
-      onTap: () {
-        // Detener audio antes de navegar
-        _stopHistoriaAudio();
-        Navigator.pushNamed(context, route);
-      },
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 25,
-            height: 25,
-            child: Image.asset(
-              'assets/images/menu/$iconPath',
-              width: 8,
-              height: 8,
-              color: Colors.white,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(Icons.home, color: Colors.white, size: 8);
-              },
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Gotham Rounded',
-              fontSize: 10,
-              fontWeight: FontWeight.w400,
-              color: Colors.white,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCenterNavItem(String iconPath) {
-    return Transform.translate(
-      offset: Offset(-6, -14),
-      child: GestureDetector(
-        onTap: _toggleSubmenu,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 68,
-              height: 68,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Color(0xFFFF1744),
-                    Color(0xFFE91E63),
-                  ],
-                ),
-                border: Border.all(color: Colors.black, width: 1),
-              ),
-              child: Center(
-                child: Image.asset(
-                  'assets/images/menu/$iconPath',
-                  width: 24,
-                  height: 24,
-                  color: Colors.white,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(Icons.home, color: Colors.white, size: 24);
-                  },
-                ),
-              ),
-            ),
           ],
         ),
       ),

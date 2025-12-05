@@ -311,15 +311,15 @@
             try {
                 userContent.innerHTML = '<div class="loading">🔄 Cargando información del líder...</div>';
                 
-                const response = await fetch('usuarios.php');
+                const response = await fetch('usuarios_fixed.php');
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
                 const data = await response.json();
                 if (data.success && data.usuarios && data.usuarios.length > 0) {
-                    // Encontrar al usuario con más puntos (líder)
-                    const usuariosOrdenados = data.usuarios.sort((a, b) => (b.puntos || 0) - (a.puntos || 0));
+                    // Encontrar al usuario con más racha_points (líder)
+                    const usuariosOrdenados = data.usuarios.sort((a, b) => (b.racha_points || 0) - (a.racha_points || 0));
                     const lider = usuariosOrdenados[0];
-                    console.log('👑 Líder encontrado:', lider.nombre_usuario, 'con', lider.puntos, 'puntos');
+                    console.log('👑 Líder encontrado:', lider.nombre_usuario, 'con', lider.racha_points, 'puntos de racha');
                     mostrarLider(lider);
                 } else {
                     throw new Error(data.message || 'No se encontraron usuarios');
@@ -338,7 +338,7 @@
             try {
                 rankingContent.innerHTML = '<div class="loading">🔄 Cargando ranking...</div>';
                 
-                const response = await fetch('usuarios.php');
+                const response = await fetch('usuarios_fixed.php');
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
                 const data = await response.json();
@@ -379,8 +379,8 @@
                 </div>
                 
                 <div class="points-display">
-                    <div class="points-number">${lider.puntos || 0}</div>
-                    <div class="points-label">⭐ PUNTOS TOTALES</div>
+                    <div class="points-number">${lider.racha_points || 0}</div>
+                    <div class="points-label">⭐ PUNTOS DE RACHA</div>
                 </div>
                 
                 <div class="streak-info">
@@ -402,9 +402,9 @@
             console.log('🏆 Mostrando ranking de usuarios...');
             const rankingContent = document.getElementById('ranking-content');
             
-            // Ordenar usuarios por puntos (descendente)
+            // Ordenar usuarios por racha_points (descendente)
             const usuariosOrdenados = usuarios
-                .sort((a, b) => (b.puntos || 0) - (a.puntos || 0))
+                .sort((a, b) => (b.racha_points || 0) - (a.racha_points || 0))
                 .slice(0, 50); // Top 50
             
             if (usuariosOrdenados.length === 0) {
@@ -425,7 +425,7 @@
                             <div class="ranking-item">
                                 <div class="ranking-position ${positionClass}">${position}</div>
                                 <div class="ranking-username">${usuario.nombre_usuario}</div>
-                                <div class="ranking-points">${usuario.puntos || 0}</div>
+                                <div class="ranking-points">${usuario.racha_points || 0}</div>
                                 <div class="ranking-session ${!usuario.ultima_sesion ? 'no-session' : ''}">
                                     ${formatearUltimaSesion(usuario.ultima_sesion)}
                                 </div>

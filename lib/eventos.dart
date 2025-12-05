@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'user_manager.dart';
 import 'services/google_calendar_service.dart';
 import 'package:intl/intl.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'widgets/header_navigation.dart';
-import 'widgets/bottom_navigation_menu.dart';
 
 // Clase para usar en main_container.dart (sin submenu)
 class EventosPage extends StatefulWidget {
@@ -193,8 +190,9 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
             // Header de navegación reutilizable
             HeaderNavigation(
               onMenuTap: () => Navigator.pop(context),
-              title: 'BIENVENIDOS',
+              title: 'SECCIÓN',
               subtitle: 'EVENTOS Y\nCAMPAÑAS',
+              leftPadding: 15,
             ),
             
             // Barra de búsqueda
@@ -327,26 +325,6 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
             
             // Submenu (se muestra cuando se activa)
             if (_isSubmenuVisible) _buildEventosSubmenu(),
-            
-            // Menú inferior reutilizable
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
-                      blurRadius: 16,
-                      spreadRadius: 2,
-                      offset: Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: BottomNavigationMenu(onCenterTap: _toggleSubmenu),
-              ),
-            ),
           ],
         ),
       ),
@@ -787,8 +765,9 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
                     onMenuTap: () {
                       Navigator.pushNamed(context, '/menu');
                     },
-                    title: 'BIENVENIDOS',
+                    title: 'SECCIÓN',
                     subtitle: 'EVENTOS Y\nCAMPAÑAS',
+                    leftPadding: 15,
                   ),
                   
                   // Barra de búsqueda
@@ -916,26 +895,6 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
             
             // Submenu (se muestra cuando se activa)
             if (_isSubmenuVisible) _buildEventosSubmenu(),
-            
-            // Menú inferior reutilizable
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
-                      blurRadius: 16,
-                      spreadRadius: 2,
-                      offset: Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: BottomNavigationMenu(onCenterTap: _toggleSubmenu),
-              ),
-            ),
           ],
         ),
       ),

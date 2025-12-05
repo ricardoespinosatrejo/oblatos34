@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'widgets/header_navigation.dart';
-import 'widgets/bottom_navigation_menu.dart';
 
 class AgentesCambioScreen extends StatefulWidget {
   @override
@@ -151,8 +150,9 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
                     onMenuTap: () {
                       Navigator.pushNamed(context, '/menu');
                     },
-                    title: 'BIENVENIDOS',
+                    title: 'SECCIÓN',
                     subtitle: 'AGENTES DEL\nCAMBIO',
+                    leftPadding: 15,
                   ),
                   
                   // Tabs de categorías
@@ -226,26 +226,6 @@ class _AgentesCambioScreenState extends State<AgentesCambioScreen> with TickerPr
             
             // Submenu (se muestra cuando se activa)
             if (_isSubmenuVisible) _buildSubmenu(),
-            
-            // Menú inferior reutilizable
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
-                      blurRadius: 16,
-                      spreadRadius: 2,
-                      offset: Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: BottomNavigationMenu(onCenterTap: _toggleSubmenu),
-              ),
-            ),
           ],
         ),
       ),

@@ -122,8 +122,9 @@ class _PoderCooperacionScreenState extends State<PoderCooperacionScreen> with Ti
                       onMenuTap: () {
                         Navigator.pushNamed(context, '/menu');
                       },
-                      title: 'BIENVENIDOS',
+                      title: 'SECCIÓN',
                       subtitle: 'EL PODER DE LA\nCOOPERACIÓN',
+                      leftPadding: 15,
                     ),
                     
                     // Contenido específico de la pantalla
@@ -137,116 +138,6 @@ class _PoderCooperacionScreenState extends State<PoderCooperacionScreen> with Ti
             
             // Submenu (se muestra cuando se activa)
             if (_isSubmenuVisible) _buildSubmenu(),
-            
-            // Menú inferior rojo
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 98,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/menu/menu-barra.png'),
-                    fit: BoxFit.cover,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.18),
-                      blurRadius: 16,
-                      spreadRadius: 2,
-                      offset: Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildNavItem('m-icono1.png', 'Caja\nOblatos', '/caja'),
-                    _buildNavItem('m-icono2.png', 'Agentes\nCambio', '/agentes-cambio'),
-                    _buildCenterNavItem('m-icono3.png'),
-                    _buildNavItem('m-icono4.png', 'Eventos', '/eventos'),
-                    _buildNavItem('m-icono5.png', 'Video\nBlog', '/video-blog'),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(String iconPath, String label, String route) {
-    return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, route),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 25,
-            height: 25,
-            child: Image.asset(
-              'assets/images/menu/$iconPath',
-              width: 8,
-              height: 8,
-              color: Colors.white,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(Icons.home, color: Colors.white, size: 8);
-              },
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Gotham Rounded',
-              fontSize: 10,
-              fontWeight: FontWeight.w400,
-              color: Colors.white,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCenterNavItem(String iconPath) {
-    return Transform.translate(
-      offset: Offset(-6, -14),
-      child: GestureDetector(
-        onTap: _toggleSubmenu,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 68,
-              height: 68,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Color(0xFFFF1744),
-                    Color(0xFFE91E63),
-                  ],
-                ),
-                border: Border.all(color: Colors.black, width: 1),
-              ),
-              child: Center(
-                child: Image.asset(
-                  'assets/images/menu/$iconPath',
-                  width: 24,
-                  height: 24,
-                  color: Colors.white,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(Icons.home, color: Colors.white, size: 24);
-                  },
-                ),
-              ),
-            ),
           ],
         ),
       ),

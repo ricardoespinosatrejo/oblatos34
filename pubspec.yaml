@@ -57,6 +57,8 @@ dependencies:
   # Date/Time utilities
   intl: ^0.19.0
   
+  # Local Storage
+  shared_preferences: ^2.2.2
   
   # Background Tasks (comentado temporalmente)
   # workmanager: ^0.5.2
@@ -104,6 +106,8 @@ flutter:
     - assets/images/game/
     - assets/images/game/sounds/
     - assets/images/snippets/
+    - assets/images/rachacoop/
+    - assets/images/rachacoop/racha-window/
     - assets/audios/
     - assets/videos/
     - assets/fonts/

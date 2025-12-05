@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'widgets/bottom_navigation_menu.dart';
 import 'menu.dart';
 import 'caja_correcto.dart' as caja;
 import 'poder.dart' as poder;
@@ -70,20 +69,10 @@ class _MainContainerState extends State<MainContainer> {
         ),
         child: Stack(
           children: [
-            // Contenido principal que cambia (con espacio para el menú solo cuando no esté en el menú principal)
+            // Contenido principal que cambia
             Positioned.fill(
-              bottom: _currentRoute == '/menu' ? 0 : 98, // Altura del menú rojo solo cuando no esté en el menú
               child: _getCurrentScreen(),
             ),
-            
-            // Menú inferior FIJO (en Stack con Positioned) - Solo mostrar cuando NO esté en el menú principal
-            if (_currentRoute != '/menu')
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: BottomNavigationMenu(),
-              ),
             
             // Overlay de snippets ahora manejado globalmente
           ],

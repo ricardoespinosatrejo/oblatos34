@@ -29,6 +29,8 @@ class _GlobalSnippetWrapperState extends State<GlobalSnippetWrapper> {
   }
 
   void _initializeSnippetService() {
+    // SNIPPETS DESACTIVADOS - Comentado para desactivar el sistema de snippets
+    /*
     print('🎯 GlobalSnippetWrapper: Inicializando servicio de snippets');
     _snippetService.initialize((SnippetOverlay overlay) {
       print('🎯 GlobalSnippetWrapper: Recibiendo overlay de snippet');
@@ -45,6 +47,7 @@ class _GlobalSnippetWrapperState extends State<GlobalSnippetWrapper> {
         _snippetServiceStarted = true;
       }
     });
+    */
   }
 
   void _clearSnippetOverlay() {

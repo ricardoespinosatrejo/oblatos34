@@ -190,13 +190,13 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
         children: [
           // Título central centrado
           Positioned(
-            left: 0,
+            left: 15,
             right: 0,
             top: 0,
             child: Column(
               children: [
                 Text(
-                  'BIENVENIDOS',
+                  'SECCIÓN',
                   style: TextStyle(
                     fontFamily: 'Gotham Rounded',
                     fontSize: 19,
@@ -240,6 +240,93 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
                   size: 24,
                 ),
               ),
+            ),
+          ),
+          
+          // Indicador de racha (a la derecha del botón de regreso)
+          Positioned(
+            left: 60, // A la derecha del botón de regreso (50px + 10px de espacio)
+            top: 0,
+            child: Consumer<UserManager>(
+              builder: (context, userManager, child) {
+                final rachaPoints = userManager.rachaPoints;
+                final levelNumber = _getLevelNumber(rachaPoints);
+                
+                return GestureDetector(
+                  onTap: () {
+                    // Navegar a la sección de Rachacoop
+                    Navigator.pushNamed(context, '/rachacoop');
+                  },
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Imagen del nivel
+                      Container(
+                        width: 50,
+                        height: 50,
+                        child: Image.asset(
+                          'assets/images/rachacoop/level$levelNumber-pq.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            // Si falla, mostrar un contenedor con el número del nivel
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Color(0xFFE91E63),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '$levelNumber',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      // Esfera con puntos de racha (encima del personaje)
+                      Positioned(
+                        top: -8,
+                        right: -8,
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: Color(0xFF4CAF50), // Verde
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              '$rachaPoints',
+                              style: TextStyle(
+                                fontFamily: 'Gotham Rounded',
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
           
@@ -731,6 +818,15 @@ class _CalculadoraScreenState extends State<CalculadoraScreen> {
         ),
       ],
     );
+  }
+  
+  /// Obtener número de nivel (1-5) basado en puntos de racha
+  int _getLevelNumber(int rachaPoints) {
+    if (rachaPoints >= 2001) return 5;
+    if (rachaPoints >= 1201) return 4;
+    if (rachaPoints >= 501) return 3;
+    if (rachaPoints >= 101) return 2;
+    return 1;
   }
 }
 

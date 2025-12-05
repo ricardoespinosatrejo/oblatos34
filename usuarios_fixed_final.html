@@ -29,8 +29,8 @@
                         <th>Padre/Madre</th>
                         <th>Email</th>
                         <th>Teléfono</th>
-                        <th>Puntos</th>
-                        <th>Racha</th>
+                        <th>Puntos de Racha</th>
+                        <th>Días Consecutivos</th>
                         <th>Última Sesión</th>
                         <th>Fecha de Registro</th>
                     </tr>
@@ -61,7 +61,7 @@
                 tbody.innerHTML = '<tr><td colspan="11" class="loading">Cargando usuarios...</td></tr>';
                 
                 console.log('Haciendo fetch a usuarios.php...');
-                const response = await fetch('usuarios.php');
+                const response = await fetch('usuarios_fixed.php');
                 console.log('Respuesta recibida:', response);
                 
                 if (!response.ok) {
@@ -117,7 +117,7 @@
                     <td>${usuario.nombre_padre_madre || 'N/A'}</td>
                     <td>${usuario.email || 'N/A'}</td>
                     <td>${usuario.telefono || 'N/A'}</td>
-                    <td class="${formatearPuntos(usuario.puntos)}">${usuario.puntos || 0}</td>
+                    <td class="${formatearPuntos(usuario.racha_points)}">${usuario.racha_points || 0}</td>
                     <td class="${formatearRacha(usuario.racha_dias)}">${usuario.racha_dias || 0}</td>
                     <td class="${formatearUltimaSesion(usuario.ultima_sesion)}">${formatearUltimaSesion(usuario.ultima_sesion)}</td>
                     <td>${formatearFecha(usuario.fecha_registro)}</td>
@@ -138,7 +138,7 @@
             }
             
             const totalUsuarios = usuarios.length;
-            const totalPuntos = usuarios.reduce((sum, u) => sum + (u.puntos || 0), 0);
+            const totalPuntos = usuarios.reduce((sum, u) => sum + (u.racha_points || 0), 0);
             const promedioPuntos = totalUsuarios > 0 ? Math.round(totalPuntos / totalUsuarios) : 0;
             const usuariosConRacha = usuarios.filter(u => (u.racha_dias || 0) > 0).length;
             const rachaMaxima = Math.max(...usuarios.map(u => u.racha_dias || 0));
@@ -150,11 +150,11 @@
                     <p>${totalUsuarios}</p>
                 </div>
                 <div class="stat-card">
-                    <h3>⭐ Total Puntos</h3>
+                    <h3>⭐ Total Puntos de Racha</h3>
                     <p>${totalPuntos}</p>
                 </div>
                 <div class="stat-card">
-                    <h3>📊 Promedio Puntos</h3>
+                    <h3>📊 Promedio Puntos de Racha</h3>
                     <p>${promedioPuntos}</p>
                 </div>
                 <div class="stat-card">

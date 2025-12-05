@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'widgets/header_navigation.dart';
 import 'services/app_orientation_service.dart';
 import 'services/snippet_service.dart';
+import 'services/daily_challenge_service.dart';
+import 'widgets/daily_challenge_overlay.dart';
+import 'widgets/challenge_success_overlay.dart';
+import 'user_manager.dart';
 
 class VideoBlogScreen extends StatefulWidget {
   @override
@@ -156,106 +163,6 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
             
             // Submenu (se muestra cuando se activa)
             if (_isSubmenuVisible) _buildVideoBlogSubmenu(),
-            
-            // Menú inferior rojo (debe estar al final para estar por encima del submenú)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 98,
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/menu/menu-barra.png'),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildNavItem('m-icono1.png', 'Caja\nOblatos', '/caja'),
-                    _buildNavItem('m-icono2.png', 'Agentes\nCambio', '/agentes-cambio'),
-                    _buildCenterNavItem('m-icono3.png'),
-                    _buildNavItem('m-icono4.png', 'Eventos', '/eventos'),
-                    _buildNavItem('m-icono5.png', 'Video\nBlog', '/video-blog'),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(String iconPath, String label, String route) {
-    return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, route),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 25,
-            height: 25,
-            child: Image.asset(
-              'assets/images/menu/$iconPath',
-              width: 8,
-              height: 8,
-              color: Colors.white,
-              errorBuilder: (context, error, stackTrace) {
-                return Icon(Icons.home, color: Colors.white, size: 8);
-              },
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: 'Gotham Rounded',
-              fontSize: 8,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCenterNavItem(String iconPath) {
-    return Transform.translate(
-      offset: Offset(-6, -14),
-      child: GestureDetector(
-        onTap: _toggleSubmenu,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 68,
-              height: 68,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    Color(0xFFFF1744),
-                    Color(0xFFE91E63),
-                  ],
-                ),
-                border: Border.all(color: Colors.black, width: 1),
-              ),
-              child: Center(
-                child: Image.asset(
-                  'assets/images/menu/$iconPath',
-                  width: 24,
-                  height: 24,
-                  color: Colors.white,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(Icons.lightbulb, color: Colors.white, size: 24);
-                  },
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -666,6 +573,89 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
     }
   }
 
+  // Listener para detectar cuando el video termine
+  void _videoListener() {
+    if (_videoController != null && 
+        _videoController!.value.position >= _videoController!.value.duration &&
+        _videoController!.value.duration > Duration.zero) {
+      // El video terminó completamente
+      _onVideoCompleted(_currentVideo);
+    }
+  }
+  
+  // Manejar cuando un video se completa
+  Future<void> _onVideoCompleted(int videoIndex) async {
+    try {
+      final challengeService = DailyChallengeService();
+      final challenge = await challengeService.getTodayChallenge();
+      
+      if (challenge == null || challenge.type != ChallengeType.video) {
+        return; // No hay reto de video hoy
+      }
+      
+      // Verificar si ya se completó
+      final isCompleted = await challengeService.isChallengeCompleted();
+      if (isCompleted) {
+        return; // Ya se completó
+      }
+      
+      // Verificar si el video completado coincide con el reto
+      final videoId = 'video_$videoIndex';
+      if (challenge.videoId == videoId) {
+        // ¡Reto completado!
+        await challengeService.completeChallenge();
+        final userManager = Provider.of<UserManager>(context, listen: false);
+        
+        // Llamar al PHP para registrar la completación
+        try {
+          final user = userManager.currentUser;
+          if (user != null && user['id'] != null) {
+            final response = await http.post(
+              Uri.parse('https://zumuradigital.com/app-oblatos-login/complete_daily_challenge.php'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'user_id': user['id'],
+                'challenge_type': 'video',
+                'challenge_data': {
+                  'video_id': videoId,
+                },
+              }),
+            );
+            print('🎯 Respuesta complete_daily_challenge: ${response.statusCode} - ${response.body}');
+            
+            if (response.statusCode == 200) {
+              final responseData = jsonDecode(response.body);
+              if (responseData['success'] == true && responseData['racha_points_total'] != null) {
+                userManager.updateRachaPoints(int.tryParse(responseData['racha_points_total'].toString()) ?? 0);
+              }
+            }
+          }
+        } catch (e) {
+          print('❌ Error registrando completación de reto: $e');
+        }
+        
+        userManager.completarRetoDiario();
+        
+        // Mostrar ventana de éxito
+        if (mounted) {
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return ChallengeSuccessOverlay(
+                onClose: () {
+                  Navigator.of(context).pop();
+                },
+              );
+            },
+          );
+        }
+      }
+    } catch (e) {
+      print('Error verificando reto diario de video: $e');
+    }
+  }
+  
   // Reproduce el video
   void _playVideo(int videoIndex) async {
     // Cambiar al video seleccionado
@@ -690,6 +680,9 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
       );
       
       await _videoController!.initialize();
+      
+      // Agregar listener para detectar cuando el video termine
+      _videoController!.addListener(_videoListener);
       
       // Crear controlador de Chewie
       _chewieController = ChewieController(
@@ -723,12 +716,15 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
           builder: (context) => VideoPlayerScreen(
             chewieController: _chewieController!,
             videoTitle: 'Video $videoIndex',
+            videoIndex: videoIndex,
+            onVideoCompleted: () => _onVideoCompleted(videoIndex),
           ),
         ),
       );
       
       // Cuando regreses, pausar y resetear el video
       if (result == 'video_closed') {
+        _videoController?.removeListener(_videoListener);
         _videoController?.pause();
         _videoController?.seekTo(Duration.zero);
       }
@@ -853,10 +849,14 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
 class VideoPlayerScreen extends StatefulWidget {
   final ChewieController chewieController;
   final String videoTitle;
+  final int videoIndex;
+  final VoidCallback? onVideoCompleted;
   
   VideoPlayerScreen({
     required this.chewieController,
     required this.videoTitle,
+    required this.videoIndex,
+    this.onVideoCompleted,
   });
   
   @override
@@ -874,14 +874,32 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       // Asegurar que el video se pause cuando se cierre la pantalla
       widget.chewieController.videoPlayerController.pause();
     });
+    
+    // Agregar listener para detectar cuando el video termine
+    widget.chewieController.videoPlayerController.addListener(_videoListener);
+    
     // Pausar snippets al entrar al reproductor por seguridad
     try { SnippetService().setGameOrCalculatorActive(true); } catch (_) {}
     // Permitir landscape en reproductor
     AppOrientationService().setAllowLandscape(true);
   }
   
+  void _videoListener() {
+    final controller = widget.chewieController.videoPlayerController;
+    if (controller.value.position >= controller.value.duration &&
+        controller.value.duration > Duration.zero &&
+        !controller.value.isPlaying) {
+      // El video terminó completamente
+      if (widget.onVideoCompleted != null) {
+        widget.onVideoCompleted!();
+      }
+    }
+  }
+  
   @override
   void dispose() {
+    // Remover listener
+    widget.chewieController.videoPlayerController.removeListener(_videoListener);
     // Pausar el video al cerrar la pantalla
     widget.chewieController.videoPlayerController.pause();
     // Reanudar snippets al salir del reproductor

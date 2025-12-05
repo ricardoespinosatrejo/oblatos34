@@ -12,28 +12,32 @@ class UserManager extends ChangeNotifier {
   Map<String, dynamic>? _currentUser;
   
   // Sistema de puntos
-  int _puntos = 0;
+  int _puntos = 0; // Puntos totales (legacy, se mantiene para compatibilidad)
   DateTime? _ultimaSesion;
   int _rachaDias = 0;
   DateTime? _fechaInicioRacha;
   DateTime? _ultimoBonusRacha;
-  int _puntosSnippets = 0;
-  int _puntosDiarios = 0;
-  int _gamePoints = 0;
+  int _puntosSnippets = 0; // Legacy, ya no se usa
+  int _puntosDiarios = 0; // Legacy, ya no se usa
+  int _gamePoints = 0; // Puntos del juego (independiente, para ranking)
+  
+  // Nuevo sistema de puntos de racha (principal)
+  int _rachaPoints = 0; // Puntos acumulados por rachas
 
   String get userName => _userName;
   String get userEmail => _userEmail;
   Map<String, dynamic>? get currentUser => _currentUser;
   
   // Getters para el sistema de puntos
-  int get puntos => _puntos;
-  int get puntosSnippets => _puntosSnippets;
-  int get puntosDiarios => _puntosDiarios;
-  int get gamePoints => _gamePoints;
+  int get puntos => _puntos; // Legacy
+  int get puntosSnippets => _puntosSnippets; // Legacy
+  int get puntosDiarios => _puntosDiarios; // Legacy
+  int get gamePoints => _gamePoints; // Puntos del juego (independiente)
   DateTime? get ultimaSesion => _ultimaSesion;
   int get rachaDias => _rachaDias;
   DateTime? get fechaInicioRacha => _fechaInicioRacha;
   DateTime? get ultimoBonusRacha => _ultimoBonusRacha;
+  int get rachaPoints => _rachaPoints; // Puntos de racha (sistema principal)
 
   void setUserInfo(String name, String email) {
     _userName = name.isNotEmpty ? name : 'Usuario';
@@ -61,6 +65,7 @@ class UserManager extends ChangeNotifier {
         ? DateTime.parse(user['ultimo_bonus_racha']) 
         : null;
     _gamePoints = user['total_game_points'] ?? 0;
+    _rachaPoints = user['racha_points'] ?? user['puntos_racha'] ?? 0; // Puntos de racha
     
     notifyListeners();
   }
@@ -79,6 +84,7 @@ class UserManager extends ChangeNotifier {
     _fechaInicioRacha = null;
     _ultimoBonusRacha = null;
     _gamePoints = 0;
+    _rachaPoints = 0;
     
     notifyListeners();
   }
@@ -92,11 +98,38 @@ class UserManager extends ChangeNotifier {
 
   // ===== SISTEMA DE PUNTOS =====
   
-  /// Agregar puntos al usuario
+  /// Agregar puntos al usuario (legacy)
   void addPuntos(int cantidad) {
     _puntos += cantidad;
     if (_currentUser != null) {
       _currentUser!['puntos'] = _puntos;
+    }
+    notifyListeners();
+  }
+  
+  /// Agregar puntos de racha (sistema principal)
+  void addRachaPoints(int cantidad) {
+    _rachaPoints += cantidad;
+    if (_currentUser != null) {
+      _currentUser!['racha_points'] = _rachaPoints;
+    }
+    notifyListeners();
+  }
+  
+  /// Actualizar puntos de racha desde base de datos
+  void updateRachaPoints(int newRachaPoints) {
+    _rachaPoints = newRachaPoints;
+    if (_currentUser != null) {
+      _currentUser!['racha_points'] = _rachaPoints;
+    }
+    notifyListeners();
+  }
+  
+  /// Actualizar días de racha desde base de datos
+  void updateRachaDias(int newRachaDias) {
+    _rachaDias = newRachaDias;
+    if (_currentUser != null) {
+      _currentUser!['racha_dias'] = _rachaDias;
     }
     notifyListeners();
   }
@@ -186,6 +219,7 @@ class UserManager extends ChangeNotifier {
           final diarios = payload['puntos_diarios'];
           final snippets = payload['puntos_snippets'];
           final racha = payload['racha_dias'];
+          final rachaPoints = payload['racha_points'] ?? 0; // Nuevo campo de puntos de racha
           final fechaInicio = payload['fecha_inicio_racha'];
           final ultimoBonus = payload['ultimo_bonus_racha'];
           final ultimaSesion = payload['ultima_sesion'] ?? payload['ultimaSesion'];
@@ -203,6 +237,7 @@ class UserManager extends ChangeNotifier {
           _puntosDiarios = (diarios is int) ? diarios : int.tryParse(diarios.toString()) ?? _puntosDiarios;
           _puntosSnippets = (snippets is int) ? snippets : int.tryParse(snippets.toString()) ?? _puntosSnippets;
           _rachaDias = parsedRacha;
+          _rachaPoints = (rachaPoints is int) ? rachaPoints : int.tryParse(rachaPoints.toString()) ?? _rachaPoints;
           _fechaInicioRacha = (fechaInicio != null && fechaInicio.toString().isNotEmpty)
               ? DateTime.tryParse(fechaInicio.toString())
               : _fechaInicioRacha;
@@ -218,6 +253,7 @@ class UserManager extends ChangeNotifier {
             _currentUser!['puntos_diarios'] = _puntosDiarios;
             _currentUser!['puntos_snippets'] = _puntosSnippets;
             _currentUser!['racha_dias'] = _rachaDias;
+            _currentUser!['racha_points'] = _rachaPoints;
             _currentUser!['fecha_inicio_racha'] = _fechaInicioRacha?.toIso8601String().split('T')[0];
             _currentUser!['ultimo_bonus_racha'] = _ultimoBonusRacha?.toIso8601String().split('T')[0];
             _currentUser!['ultima_sesion'] = _ultimaSesion?.toIso8601String().split('T')[0];
@@ -225,7 +261,7 @@ class UserManager extends ChangeNotifier {
 
           notifyListeners();
           if (kDebugMode) {
-            print('📱 Puntos app refrescados: base=$_puntos, snippets=$_puntosSnippets, diarios=$_puntosDiarios, racha=$_rachaDias');
+            print('📱 Puntos app refrescados: base=$_puntos, snippets=$_puntosSnippets, diarios=$_puntosDiarios, racha=$_rachaDias, rachaPoints=$_rachaPoints');
           }
         }
       }
@@ -237,7 +273,11 @@ class UserManager extends ChangeNotifier {
   }
   
   /// Actualizar sesión diaria y calcular puntos
+  /// NOTA: La lógica principal está en el PHP (update_points.php)
+  /// Este método solo actualiza los valores locales después de recibir la respuesta del servidor
   void updateSesionDiaria() {
+    // La lógica de puntos y racha se maneja en el backend PHP
+    // Este método se mantiene por compatibilidad pero no otorga puntos localmente
     final hoy = DateTime.now();
     final hoyDate = DateTime(hoy.year, hoy.month, hoy.day);
     
@@ -246,7 +286,6 @@ class UserManager extends ChangeNotifier {
       _ultimaSesion = hoyDate;
       _fechaInicioRacha = hoyDate;
       _rachaDias = 1;
-      _puntos += 2; // Puntos por primera sesión del día
     } else {
       final ultimaSesionDate = DateTime(
         _ultimaSesion!.year, 
@@ -257,7 +296,6 @@ class UserManager extends ChangeNotifier {
       if (hoyDate.isAfter(ultimaSesionDate)) {
         // Nueva sesión del día
         _ultimaSesion = hoyDate;
-        _puntos += 2; // Puntos por sesión diaria
         
         // Verificar si es día consecutivo
         if (ultimaSesionDate.isAtSameMomentAs(
@@ -286,29 +324,40 @@ class UserManager extends ChangeNotifier {
   }
   
   /// Verificar y otorgar bonus por racha
+  /// NOTA: La lógica principal está en el PHP (update_points.php)
+  /// Este método solo actualiza los valores locales después de recibir la respuesta del servidor
   void _checkBonusRacha() {
+    // La lógica de bonus se maneja en el backend PHP
+    // Este método se mantiene por compatibilidad pero no otorga puntos localmente
     final hoy = DateTime.now();
     final hoyDate = DateTime(hoy.year, hoy.month, hoy.day);
     
-    if (_rachaDias == 7 && _ultimoBonusRacha == null) {
-      // Bonus por 7 días consecutivos
-      _puntos += 50;
+    // Bonus por racha semanal: cada 7 días consecutivos = +100 puntos (días 7, 14, 21, 28, etc.)
+    if (_rachaDias % 7 == 0 && (_ultimoBonusRacha == null || 
+        _daysSinceLastBonus(_ultimoBonusRacha!) >= 7)) {
       _ultimoBonusRacha = hoyDate;
       if (_currentUser != null) {
-        _currentUser!['puntos'] = _puntos;
-        _currentUser!['ultimo_bonus_racha'] = _ultimoBonusRacha?.toIso8601String().split('T')[0];
-      }
-    } else if (_rachaDias == 30 && 
-               (_ultimoBonusRacha == null || 
-                _ultimoBonusRacha!.isBefore(DateTime(hoy.year, hoy.month, hoy.day - 7)))) {
-      // Bonus por 30 días consecutivos
-      _puntos += 200;
-      _ultimoBonusRacha = hoyDate;
-      if (_currentUser != null) {
-        _currentUser!['puntos'] = _puntos;
         _currentUser!['ultimo_bonus_racha'] = _ultimoBonusRacha?.toIso8601String().split('T')[0];
       }
     }
+    
+    // Bonus por racha mensual (28 días = 4 semanas consecutivas) = +500 puntos de racha
+    // Este bonus se otorga ADEMÁS del bonus semanal del día 28
+    if (_rachaDias == 28 && (_ultimoBonusRacha == null || 
+        _daysSinceLastBonus(_ultimoBonusRacha!) >= 28)) {
+      _ultimoBonusRacha = hoyDate;
+      if (_currentUser != null) {
+        _currentUser!['ultimo_bonus_racha'] = _ultimoBonusRacha?.toIso8601String().split('T')[0];
+      }
+    }
+  }
+  
+  /// Calcular días desde el último bonus
+  int _daysSinceLastBonus(DateTime lastBonus) {
+    final hoy = DateTime.now();
+    final hoyDate = DateTime(hoy.year, hoy.month, hoy.day);
+    final lastBonusDate = DateTime(lastBonus.year, lastBonus.month, lastBonus.day);
+    return hoyDate.difference(lastBonusDate).inDays;
   }
   
   /// Obtener puntos por actividad específica
@@ -327,12 +376,20 @@ class UserManager extends ChangeNotifier {
     }
   }
   
-  /// Completar actividad y sumar puntos
+  /// Completar actividad y sumar puntos (legacy)
   void completarActividad(String actividad) {
     final puntosGanados = getPuntosActividad(actividad);
     addPuntos(puntosGanados);
     
     // También actualizar sesión diaria
+    updateSesionDiaria();
+  }
+  
+  /// Completar reto diario - marca el reto como completado
+  /// Los 10 puntos ya se otorgan al abrir la app (en updateSesionDiaria)
+  void completarRetoDiario() {
+    // No otorgar puntos adicionales aquí, ya se dan 10 puntos al abrir la app
+    // Solo actualizar sesión diaria para mantener la racha
     updateSesionDiaria();
   }
 }
