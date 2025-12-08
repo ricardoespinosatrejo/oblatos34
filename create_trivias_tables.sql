@@ -65,3 +65,4 @@ SHOW TABLES LIKE 'trivia%';
 SHOW TABLES LIKE 'daily_challenge%';
 
 
+

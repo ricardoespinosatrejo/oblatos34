@@ -276,43 +276,68 @@ class _DailyChallengeOverlayState extends State<DailyChallengeOverlay>
                                                 ),
                                                 SizedBox(height: 5), // Reducido de 15 a 5 para acercar más el título a los días
                                                 
-                                                // Días consecutivos
-                                                Row(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                                                  textBaseline: TextBaseline.alphabetic,
-                                                  children: [
-                                                    Text(
-                                                      '$rachaDias',
-                                                      style: TextStyle(
-                                                        fontFamily: 'Gotham Rounded',
-                                                        fontSize: 18,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: Color(0xFF6F6E6E), // #6F6E6E
-                                                      ),
-                                                    ),
-                                                    SizedBox(width: 8),
-                                                    Text(
-                                                      'días',
-                                                      style: TextStyle(
-                                                        fontFamily: 'Gotham Rounded',
-                                                        fontSize: 18,
-                                                        fontWeight: FontWeight.w500,
-                                                        color: Color(0xFF6F6E6E), // #6F6E6E
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Transform.translate(
-                                                  offset: Offset(0, -8), // Acercar "consecutivos" 8 píxeles hacia arriba
-                                                  child: Text(
-                                                    'consecutivos',
-                                                    style: TextStyle(
-                                                      fontFamily: 'Gotham Rounded',
-                                                      fontSize: 18,
-                                                      color: Color(0xFF6F6E6E), // #6F6E6E
-                                                    ),
-                                                  ),
+                                                // Verificar si es trivia de recuperación
+                                                Builder(
+                                                  builder: (context) {
+                                                    final isRecoveryTrivia = widget.challenge.title == '¡Recupera tu Racha!';
+                                                    
+                                                    if (isRecoveryTrivia) {
+                                                      // Mostrar "RECUPERA TU RACHA" para trivia de recuperación
+                                                      return Text(
+                                                        'RECUPERA TU RACHA',
+                                                        style: TextStyle(
+                                                          fontFamily: 'Gotham Rounded',
+                                                          fontSize: 18,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: Color(0xFF6F6E6E), // #6F6E6E
+                                                        ),
+                                                        textAlign: TextAlign.center,
+                                                      );
+                                                    } else {
+                                                      // Mostrar días consecutivos normal
+                                                      return Column(
+                                                        children: [
+                                                          Row(
+                                                            mainAxisAlignment: MainAxisAlignment.center,
+                                                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                                                            textBaseline: TextBaseline.alphabetic,
+                                                            children: [
+                                                              Text(
+                                                                '$rachaDias',
+                                                                style: TextStyle(
+                                                                  fontFamily: 'Gotham Rounded',
+                                                                  fontSize: 18,
+                                                                  fontWeight: FontWeight.bold,
+                                                                  color: Color(0xFF6F6E6E), // #6F6E6E
+                                                                ),
+                                                              ),
+                                                              SizedBox(width: 8),
+                                                              Text(
+                                                                'días',
+                                                                style: TextStyle(
+                                                                  fontFamily: 'Gotham Rounded',
+                                                                  fontSize: 18,
+                                                                  fontWeight: FontWeight.w500,
+                                                                  color: Color(0xFF6F6E6E), // #6F6E6E
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          Transform.translate(
+                                                            offset: Offset(0, -8), // Acercar "consecutivos" 8 píxeles hacia arriba
+                                                            child: Text(
+                                                              'consecutivos',
+                                                              style: TextStyle(
+                                                                fontFamily: 'Gotham Rounded',
+                                                                fontSize: 18,
+                                                                color: Color(0xFF6F6E6E), // #6F6E6E
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      );
+                                                    }
+                                                  },
                                                 ),
                                                 SizedBox(height: 15), // Reducido de 30 a 15 para juntar más el texto
                                                 

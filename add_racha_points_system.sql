@@ -23,3 +23,4 @@ WHERE TABLE_NAME = 'usuarios'
 AND COLUMN_NAME = 'racha_points';
 
 
+

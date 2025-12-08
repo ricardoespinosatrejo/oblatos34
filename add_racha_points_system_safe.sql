@@ -13,3 +13,4 @@ CREATE INDEX idx_usuarios_racha_points ON usuarios(racha_points DESC);
 DESCRIBE usuarios;
 
 
+

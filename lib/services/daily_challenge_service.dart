@@ -90,7 +90,8 @@ class DailyChallengeService {
   DailyChallenge? _todayChallenge;
   
   /// Obtener el reto del día (genera uno nuevo si es necesario)
-  Future<DailyChallenge?> getTodayChallenge() async {
+  /// [shouldUseRecoveryTrivia] indica si se debe usar trivia de recuperación de racha
+  Future<DailyChallenge?> getTodayChallenge({bool shouldUseRecoveryTrivia = false}) async {
     final prefs = await SharedPreferences.getInstance();
     final today = DateTime.now();
     final todayKey = '${today.year}-${today.month}-${today.day}';
@@ -125,22 +126,29 @@ class DailyChallengeService {
     // Filtrar retos disponibles (excluir trivias de la lista inicial, se agregarán dinámicamente)
     final nonTriviaChallenges = _availableChallenges.where((c) => c.type != ChallengeType.trivia).toList();
     
+    // Si se debe usar trivia de recuperación, forzar que sea trivia
+    final shouldForceRecoveryTrivia = shouldUseRecoveryTrivia;
+    
     // Intentar seleccionar un reto
     while (attempts < maxAttempts && _todayChallenge == null) {
       // Decidir si intentar una trivia (10% de probabilidad) o un reto normal
-      final tryTrivia = random.nextDouble() < 0.1 && nonTriviaChallenges.isNotEmpty;
+      // Si se debe usar trivia de recuperación, forzar que sea trivia
+      final tryTrivia = shouldForceRecoveryTrivia || (random.nextDouble() < 0.1 && nonTriviaChallenges.isNotEmpty);
       
       if (tryTrivia) {
         // Intentar obtener trivia del PHP
         try {
-          final trivia = await _fetchTriviaFromPHP('normal');
+          // Si se debe usar trivia de recuperación, usar tipo 'recuperacion_racha', sino 'normal'
+          final triviaType = shouldUseRecoveryTrivia ? 'recuperacion_racha' : 'normal';
+          print('🔍 Obteniendo trivia de tipo: $triviaType');
+          final trivia = await _fetchTriviaFromPHP(triviaType);
           if (trivia != null) {
             // Seleccionar una imagen de ventana aleatoria
             final randomWindowImage = 'racha-window-${(random.nextInt(5) + 1).toString().padLeft(2, '0')}.png';
             
             _todayChallenge = DailyChallenge(
               type: ChallengeType.trivia,
-              title: '¡Responde la Trivia!',
+              title: shouldUseRecoveryTrivia ? '¡Recupera tu Racha!' : '¡Responde la Trivia!',
               description: trivia['pregunta'],
               triviaId: trivia['id'],
               windowImage: randomWindowImage,
@@ -150,7 +158,30 @@ class DailyChallengeService {
                 orden: op['orden'],
               )).toList(),
             );
+            print('✅ Trivia obtenida: ${trivia['pregunta']}');
             break; // Salir del loop si se obtuvo la trivia
+          } else {
+            print('⚠️ No se pudo obtener trivia de tipo $triviaType, intentando con tipo normal');
+            // Si no se pudo obtener trivia de recuperación, intentar con normal
+            if (shouldUseRecoveryTrivia) {
+              final normalTrivia = await _fetchTriviaFromPHP('normal');
+              if (normalTrivia != null) {
+                final randomWindowImage = 'racha-window-${(random.nextInt(5) + 1).toString().padLeft(2, '0')}.png';
+                _todayChallenge = DailyChallenge(
+                  type: ChallengeType.trivia,
+                  title: '¡Responde la Trivia!',
+                  description: normalTrivia['pregunta'],
+                  triviaId: normalTrivia['id'],
+                  windowImage: randomWindowImage,
+                  triviaOptions: (normalTrivia['opciones'] as List).map<TriviaOption>((op) => TriviaOption(
+                    id: op['id'],
+                    texto: op['texto'],
+                    orden: op['orden'],
+                  )).toList(),
+                );
+                break;
+              }
+            }
           }
         } catch (e) {
           print('❌ Error obteniendo trivia del PHP: $e');

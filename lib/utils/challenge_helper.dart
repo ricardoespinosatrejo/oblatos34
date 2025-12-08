@@ -27,8 +27,31 @@ class ChallengeHelper {
         return;
       }
       
-      // Obtener el reto del día
-      final challenge = await challengeService.getTodayChallenge();
+      // Verificar si el usuario perdió la racha (debe mostrar trivia de recuperación)
+      // Un usuario perdió la racha si: racha_dias = 1 y fecha_inicio_racha = hoy
+      bool shouldUseRecoveryTrivia = false;
+      final rachaDias = userManager.rachaDias;
+      final fechaInicioRacha = userManager.fechaInicioRacha;
+      final hoy = DateTime.now();
+      final hoyDate = DateTime(hoy.year, hoy.month, hoy.day);
+      
+      if (rachaDias == 1 && fechaInicioRacha != null) {
+        final fechaInicioDate = DateTime(
+          fechaInicioRacha.year,
+          fechaInicioRacha.month,
+          fechaInicioRacha.day,
+        );
+        // Si la fecha de inicio de racha es hoy y tiene solo 1 día, perdió la racha
+        if (fechaInicioDate.isAtSameMomentAs(hoyDate)) {
+          shouldUseRecoveryTrivia = true;
+          print('🔍 Usuario perdió la racha, se usará trivia de recuperación');
+        }
+      }
+      
+      // Obtener el reto del día (con indicador de trivia de recuperación si aplica)
+      final challenge = await challengeService.getTodayChallenge(
+        shouldUseRecoveryTrivia: shouldUseRecoveryTrivia,
+      );
       print('🔍 ChallengeHelper: challenge = ${challenge?.description}');
       
       if (challenge == null) {
