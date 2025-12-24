@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'menu.dart';
 import 'services/snippet_service.dart';
 import 'user_manager.dart';
+import 'services/daily_challenge_service.dart';
+import 'widgets/daily_challenge_overlay.dart';
 import 'utils/challenge_helper.dart';
 
 void main() {
@@ -226,16 +229,12 @@ class _InicioPageState extends State<InicioPage> {
           // NUEVO: Otorgar puntos de sesión diaria a usuarios nuevos desde el primer registro
           await _actualizarSesionDiaria(userManager);
           
-          // Reanudar snippets
+          // Reanudar snippets y navegar al menú
           try { SnippetService().setGameOrCalculatorActive(false); } catch (_) {}
-          
-          // Navegar al menú (el reto se mostrará automáticamente en HomeScreen)
-          if (context.mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => HomeScreen()),
-            );
-          }
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomeScreen()),
+          );
         } else {
           // Error en el registro
           ScaffoldMessenger.of(context).showSnackBar(
@@ -316,16 +315,92 @@ class _InicioPageState extends State<InicioPage> {
     }
   }
 
-  // Actualizar sesión diaria automáticamente
-  Future<void> _actualizarSesionDiaria(UserManager userManager) async {
+  // Actualizar sesión diaria automáticamente y detectar si se rompió la racha
+  // Retorna true si se rompió la racha, false en caso contrario
+  Future<bool> _actualizarSesionDiaria(UserManager userManager) async {
     try {
       final user = userManager.currentUser;
       if (user == null || user['id'] == null || user['id'] == 0) {
         print('❌ No se puede actualizar sesión diaria: user_id inválido (${user?['id']})');
-        return;
+        return false;
       }
 
       print('🎯 Intentando actualizar sesión diaria para user_id: ${user['id']}');
+
+      // Obtener valores ANTES de actualizar para detectar racha rota
+      final userData = user['ultima_sesion'] != null ? user['ultima_sesion'].toString() : null;
+      final rachaDiasAnterior = user['racha_dias'] ?? 0;
+      final fechaInicioRachaAnterior = user['fecha_inicio_racha_anterior']?.toString();
+      final fechaInicioRachaActual = user['fecha_inicio_racha']?.toString();
+      
+      print('📊 Valores del usuario ANTES de actualizar: ultimaSesion=$userData, rachaDias=$rachaDiasAnterior, fechaInicioRacha=$fechaInicioRachaActual, fechaInicioRachaAnterior=$fechaInicioRachaAnterior');
+
+      // Verificar si se rompió la racha
+      bool rachaRota = false;
+      
+      // Método 1: Verificar si fecha_inicio_racha cambió (se reinició)
+      if (fechaInicioRachaAnterior != null && 
+          fechaInicioRachaActual != null && 
+          fechaInicioRachaAnterior != fechaInicioRachaActual &&
+          rachaDiasAnterior > 0) {
+        print('🔥 RACHA ROTA DETECTADA (método 1): fecha_inicio_racha cambió de $fechaInicioRachaAnterior a $fechaInicioRachaActual');
+        rachaRota = true;
+      }
+      // Método 2: Verificar diferencia de días desde última sesión
+      else if (userData != null && userData.isNotEmpty && rachaDiasAnterior > 0) {
+        try {
+          final ultimaSesionDate = DateTime.parse(userData);
+          final hoy = DateTime.now();
+          final hoyDate = DateTime(hoy.year, hoy.month, hoy.day);
+          final ultimaSesionDateOnly = DateTime(
+            ultimaSesionDate.year,
+            ultimaSesionDate.month,
+            ultimaSesionDate.day,
+          );
+          
+          // Calcular diferencia de días
+          final diasDiferencia = hoyDate.difference(ultimaSesionDateOnly).inDays;
+          print('📅 Diferencia de días: $diasDiferencia (última sesión: $ultimaSesionDateOnly, hoy: $hoyDate)');
+          
+          // Si pasó más de un día desde la última sesión Y tenía racha activa, se rompió
+          if (diasDiferencia > 1 && rachaDiasAnterior > 0) {
+            print('🔥 RACHA ROTA DETECTADA (método 2): tenía $rachaDiasAnterior días, pasaron $diasDiferencia días');
+            rachaRota = true;
+          } else if (diasDiferencia == 1) {
+            // Si fue ayer, la racha continúa (no se rompió)
+            print('✅ Racha continúa: última sesión fue ayer');
+          } else if (diasDiferencia == 0) {
+            // Si fue hoy, verificar si fecha_inicio_racha es hoy pero había racha anterior
+            // Esto indica que la racha se reinició hoy
+            if (fechaInicioRachaActual != null) {
+              try {
+                final fechaInicioDate = DateTime.parse(fechaInicioRachaActual);
+                final fechaInicioDateOnly = DateTime(fechaInicioDate.year, fechaInicioDate.month, fechaInicioDate.day);
+                if (fechaInicioDateOnly.isAtSameMomentAs(hoyDate) && 
+                    fechaInicioRachaAnterior != null && 
+                    fechaInicioRachaAnterior != fechaInicioRachaActual &&
+                    rachaDiasAnterior > 1) {
+                  print('🔥 RACHA ROTA DETECTADA (método 3): fecha_inicio_racha se reinició hoy, tenía $rachaDiasAnterior días');
+                  rachaRota = true;
+                } else {
+                  print('✅ Última sesión fue hoy, racha continúa');
+                }
+              } catch (e) {
+                print('✅ Última sesión fue hoy');
+              }
+            } else {
+              print('✅ Última sesión fue hoy');
+            }
+          }
+        } catch (e) {
+          print('❌ Error parseando fecha: $e');
+        }
+      } else {
+        print('ℹ️ No se puede verificar racha: ultimaSesion=${userData ?? "null"}, rachaDias=$rachaDiasAnterior');
+      }
+      
+      // Ahora refrescar los puntos para tener datos actualizados
+      await userManager.refreshAppPoints();
 
       // Llamar al backend para actualizar sesión diaria
       final response = await http.post(
@@ -341,37 +416,26 @@ class _InicioPageState extends State<InicioPage> {
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        print('🎯 Respuesta completa: $responseData');
         if (responseData['success'] == true) {
-          // Actualizar puntos localmente desde la respuesta del servidor
-          if (responseData['data'] != null) {
-            final data = responseData['data'];
-            print('🎯 Datos recibidos: $data');
-            if (data['racha_points'] != null) {
-              final rachaPoints = int.tryParse(data['racha_points'].toString()) ?? 0;
-              print('🎯 Actualizando racha_points a: $rachaPoints');
-              userManager.updateRachaPoints(rachaPoints);
-            }
-            if (data['racha_dias'] != null) {
-              // Actualizar racha_dias también
-              final rachaDias = int.tryParse(data['racha_dias'].toString()) ?? 0;
-              print('🎯 Actualizando racha_dias a: $rachaDias');
-              // Actualizar en UserManager para que se refleje en la UI
-              userManager.updateRachaDias(rachaDias);
-            }
-          }
-          // También refrescar desde la base de datos para asegurar sincronización
           await userManager.refreshAppPoints();
-          print('✅ Sesión diaria sincronizada. RachaPoints final: ${userManager.rachaPoints}, RachaDias: ${userManager.rachaDias}');
+          print('✅ Sesión diaria sincronizada');
+          
+          // Retornar el resultado de la verificación de racha rota
+          if (rachaRota) {
+            print('🔥 Retornando true - se detectó racha rota');
+          }
+          return rachaRota;
         } else {
           print('❌ Error en respuesta de sesión diaria: ${responseData['error']}');
+          return false;
         }
       } else {
         print('❌ Error HTTP actualizando sesión diaria: ${response.statusCode}');
-        print('❌ Respuesta: ${response.body}');
+        return false;
       }
     } catch (e) {
       print('❌ Error actualizando sesión diaria: $e');
+      return false;
     }
   }
 
@@ -428,13 +492,23 @@ class _InicioPageState extends State<InicioPage> {
           userManager.setCurrentUser(responseData['usuario']);
           
           // NUEVO: Actualizar sesión diaria automáticamente al hacer login
-          await _actualizarSesionDiaria(userManager);
+          final rachaRota = await _actualizarSesionDiaria(userManager);
+          
+          print('🎯 Resultado verificación racha: rachaRota=$rachaRota, mounted=$mounted');
           
           // Reanudar snippets
           try { SnippetService().setGameOrCalculatorActive(false); } catch (_) {}
           
-          // Navegar al menú (el reto se mostrará automáticamente en HomeScreen)
-          if (context.mounted) {
+          // Si se rompió la racha, mostrar trivia de recuperación ANTES de navegar
+          if (rachaRota && mounted) {
+            print('🔥 Mostrando trivia de recuperación...');
+            await _mostrarTriviaRecuperacion(context, userManager);
+          } else {
+            print('ℹ️ No se muestra trivia: rachaRota=$rachaRota, mounted=$mounted');
+          }
+          
+          // Navegar al menú después de mostrar la trivia (o si no hay trivia)
+          if (mounted) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => HomeScreen()),
@@ -1463,5 +1537,149 @@ class _InicioPageState extends State<InicioPage> {
         ),
       ),
     );
+  }
+
+  /// Mostrar trivia de recuperación cuando se rompe la racha
+  Future<void> _mostrarTriviaRecuperacion(BuildContext context, UserManager userManager) async {
+    try {
+      print('🎯 Iniciando _mostrarTriviaRecuperacion');
+      final challengeService = DailyChallengeService();
+      
+      // Marcar que se mostró la trivia de recuperación para evitar que se muestre el reto diario
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateTime.now();
+      final todayKey = '${today.year}-${today.month}-${today.day}';
+      await prefs.setBool('recovery_trivia_shown_$todayKey', true);
+      print('🎯 Marcado recovery_trivia_shown para hoy');
+      
+      // Obtener la trivia completa desde el servidor
+      try {
+        final user = userManager.currentUser;
+        if (user == null || user['id'] == null) {
+          print('❌ No se puede obtener trivia: user_id inválido');
+          return;
+        }
+
+        // Buscar trivia de recuperación por tipo en lugar de ID fijo
+        final response = await http.get(
+          Uri.parse('https://zumuradigital.com/app-oblatos-login/get_trivia.php?tipo=recuperacion_racha'),
+        );
+
+        if (response.statusCode != 200) {
+          print('❌ Error al obtener la trivia: ${response.statusCode}');
+          return;
+        }
+
+        final data = jsonDecode(response.body);
+        if (data['success'] != true || data['trivia'] == null) {
+          print('❌ No se pudo cargar la trivia: ${data['error'] ?? 'unknown'}');
+          
+          // Si no hay trivia de recuperación, intentar con una trivia normal
+          print('🔄 Intentando obtener trivia normal como alternativa...');
+          final fallbackResponse = await http.get(
+            Uri.parse('https://zumuradigital.com/app-oblatos-login/get_trivia.php?trivia_id=1'),
+          );
+          
+          if (fallbackResponse.statusCode == 200) {
+            final fallbackData = jsonDecode(fallbackResponse.body);
+            if (fallbackData['success'] == true && fallbackData['trivia'] != null) {
+              print('✅ Usando trivia normal como alternativa');
+              // Continuar con la trivia normal
+              final trivia = fallbackData['trivia'];
+              final opciones = trivia['opciones'] as List<dynamic>? ?? [];
+              
+              if (opciones.isEmpty) {
+                print('❌ La trivia alternativa tampoco tiene opciones');
+                return;
+              }
+              
+              // Convertir opciones a TriviaOption
+              final triviaOptions = opciones.map((opt) {
+                return TriviaOption(
+                  id: opt['id'] as int? ?? 0,
+                  texto: opt['texto'] ?? opt['text'] ?? '',
+                  orden: opt['orden'] as int? ?? 0,
+                );
+              }).toList();
+              
+              // Crear reto de recuperación con las opciones
+              final recoveryChallenge = DailyChallenge(
+                type: ChallengeType.trivia,
+                title: '¡Recupera tu Racha!',
+                description: 'Responde correctamente esta trivia para recuperar tu racha y no perderla',
+                triviaId: trivia['id'] as int? ?? 1,
+                windowImage: 'assets/images/rachacoop/racha-window/racha-window-01.png',
+                triviaOptions: triviaOptions,
+              );
+              
+              print('🎯 Reto de recuperación creado con ${triviaOptions.length} opciones (trivia alternativa)');
+              
+              // Mostrar directamente la trivia usando ChallengeHelper
+              if (!mounted) {
+                print('❌ Context no está montado, no se puede mostrar trivia');
+                return;
+              }
+              
+              await ChallengeHelper.showTriviaChallenge(
+                context,
+                recoveryChallenge,
+                challengeService,
+                userManager,
+              );
+              
+              print('🎯 _mostrarTriviaRecuperacion completado (con trivia alternativa)');
+              return;
+            }
+          }
+          
+          print('❌ No se pudo obtener ninguna trivia disponible');
+          return;
+        }
+
+        final trivia = data['trivia'];
+        final opciones = trivia['opciones'] as List<dynamic>? ?? [];
+
+        // Convertir opciones a TriviaOption
+        final triviaOptions = opciones.map((opt) {
+          return TriviaOption(
+            id: opt['id'] as int? ?? 0,
+            texto: opt['texto'] ?? opt['text'] ?? '',
+            orden: opt['orden'] as int? ?? 0,
+          );
+        }).toList();
+
+        // Crear reto de recuperación con las opciones
+        final recoveryChallenge = DailyChallenge(
+          type: ChallengeType.trivia,
+          title: '¡Recupera tu Racha!',
+          description: 'Responde correctamente esta trivia para recuperar tu racha y no perderla',
+          triviaId: 1,
+          windowImage: 'assets/images/rachacoop/racha-window/racha-window-01.png',
+          triviaOptions: triviaOptions,
+        );
+
+        print('🎯 Reto de recuperación creado con ${triviaOptions.length} opciones');
+
+        // Mostrar directamente la trivia usando ChallengeHelper (que tiene los botones)
+        if (!mounted) {
+          print('❌ Context no está montado, no se puede mostrar trivia');
+          return;
+        }
+        
+        await ChallengeHelper.showTriviaChallenge(
+          context,
+          recoveryChallenge,
+          challengeService,
+          userManager,
+        );
+        
+        print('🎯 _mostrarTriviaRecuperacion completado');
+      } catch (e) {
+        print('❌ Error obteniendo trivia de recuperación: $e');
+      }
+    } catch (e) {
+      print('❌ Error mostrando trivia de recuperación: $e');
+      print('❌ Stack trace: ${StackTrace.current}');
+    }
   }
 }

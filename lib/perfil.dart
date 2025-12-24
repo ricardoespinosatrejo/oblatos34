@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'user_manager.dart';
 import 'widgets/header_navigation.dart';
 import 'inicio.dart';
@@ -31,8 +30,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   bool _isEditing = false;
   int _selectedProfileImage = 1; // 1, 2, o 3
-  int _mesesEnNivel5 = 0; // Meses consecutivos en nivel 5
-  DateTime? _fechaPrimerNivel5; // Fecha en que alcanzó nivel 5 por primera vez
   
   // Modo debug: cambia a false cuando termines las pruebas
   static const bool DEBUG_UNLOCK_ALL_PROFILES = false; // Cambiar a false en producción
@@ -41,7 +38,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
   void initState() {
     super.initState();
     _loadUserData();
-    _loadSkinUnlockData();
     
     // Hacer que el scroll comience abajo y suba con animación
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -275,10 +271,10 @@ class _PerfilScreenState extends State<PerfilScreen> {
     }
   }
 
-  Widget _buildProfileImageSelector(int imageNumber, int rachaPoints) {
-    final isUnlocked = _isProfileUnlocked(imageNumber, rachaPoints);
+  Widget _buildProfileImageSelector(int imageNumber, int totalPoints) {
+    final isUnlocked = _isProfileUnlocked(imageNumber, totalPoints);
     final isSelected = _selectedProfileImage == imageNumber;
-    final requiredMonths = _getRequiredMonths(imageNumber);
+    final requiredPoints = _getRequiredPoints(imageNumber);
 
     return GestureDetector(
       onTap: isUnlocked ? () => _selectProfileImage(imageNumber) : () {
@@ -286,9 +282,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              imageNumber == 1 
-                ? 'Este perfil está disponible'
-                : 'Necesitas alcanzar Nivel 5 y mantenerlo ${requiredMonths > 0 ? requiredMonths : ""} ${requiredMonths == 1 ? "mes" : requiredMonths > 1 ? "meses" : ""} para desbloquear este perfil',
+              'Necesitas ${_formatNumber(requiredPoints)} puntos para desbloquear este perfil',
               style: TextStyle(
                 fontFamily: 'Gotham Rounded',
                 fontSize: 14,
@@ -325,13 +319,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
               ),
             ),
             SizedBox(height: 4),
-            // Mostrar requisito
+            // Mostrar puntos requeridos
             Text(
-              imageNumber == 1 
-                ? 'Disponible' 
-                : isUnlocked 
-                  ? 'Nivel 5' 
-                  : 'Nivel 5',
+              imageNumber == 1 ? 'Disponible' : '${_formatNumber(requiredPoints)} pts',
               style: TextStyle(
                 fontFamily: 'Gotham Rounded',
                 fontSize: 10,
@@ -346,150 +336,44 @@ class _PerfilScreenState extends State<PerfilScreen> {
     );
   }
 
+  String _formatNumber(int number) {
+    if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(number % 1000 == 0 ? 0 : 1)}k';
+    }
+    return number.toString();
+  }
+
   String _getProfileImagePath(int imageNumber) {
     return 'assets/images/perfil/perfil$imageNumber.png';
   }
 
-  // Obtener meses requeridos para cada perfil (después de alcanzar nivel 5)
-  int _getRequiredMonths(int imageNumber) {
+  // Obtener puntos requeridos para cada perfil
+  int _getRequiredPoints(int imageNumber) {
     switch (imageNumber) {
       case 1:
         return 0; // Siempre activo
       case 2:
-        return 0; // Se libera al alcanzar nivel 5 por primera vez
+        return 2000;
       case 3:
-        return 1; // 1 mes en nivel 5
+        return 7000;
       case 4:
-        return 2; // 2 meses en nivel 5
+        return 15000;
       case 5:
-        return 3; // 3 meses en nivel 5
+        return 30000;
       case 6:
-        return 4; // 4 meses en nivel 5
+        return 50000;
       default:
         return 0;
     }
   }
 
-  // Verificar si un perfil está desbloqueado basado en nivel 5 y meses consecutivos
-  bool _isProfileUnlocked(int imageNumber, int rachaPoints) {
+  // Verificar si un perfil está desbloqueado
+  bool _isProfileUnlocked(int imageNumber, int totalPoints) {
     // En modo debug, todos los perfiles están desbloqueados
     if (DEBUG_UNLOCK_ALL_PROFILES) {
       return true;
     }
-    
-    // Perfil 1 siempre está disponible
-    if (imageNumber == 1) {
-      return true;
-    }
-    
-    // Verificar si está en nivel 5 (2001+ racha_points)
-    final isLevel5 = rachaPoints >= 2001;
-    if (!isLevel5) {
-      return false;
-    }
-    
-    // Verificar meses requeridos
-    final requiredMonths = _getRequiredMonths(imageNumber);
-    return _mesesEnNivel5 >= requiredMonths;
-  }
-  
-  // Cargar datos de desbloqueo de skins desde SharedPreferences
-  Future<void> _loadSkinUnlockData() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final mesesEnNivel5 = prefs.getInt('meses_en_nivel5') ?? 0;
-      final fechaPrimerNivel5Str = prefs.getString('fecha_primer_nivel5');
-      
-      setState(() {
-        _mesesEnNivel5 = mesesEnNivel5;
-        if (fechaPrimerNivel5Str != null) {
-          _fechaPrimerNivel5 = DateTime.parse(fechaPrimerNivel5Str);
-        }
-      });
-      
-      // Verificar y actualizar meses en nivel 5
-      _checkAndUpdateMesesEnNivel5();
-    } catch (e) {
-      print('Error cargando datos de skins: $e');
-    }
-  }
-  
-  // Verificar y actualizar meses consecutivos en nivel 5
-  Future<void> _checkAndUpdateMesesEnNivel5() async {
-    try {
-      final userManager = Provider.of<UserManager>(context, listen: false);
-      final rachaPoints = userManager.rachaPoints;
-      final isLevel5 = rachaPoints >= 2001;
-      
-      final prefs = await SharedPreferences.getInstance();
-      final ultimaVerificacionStr = prefs.getString('ultima_verificacion_nivel5');
-      final ultimaVerificacion = ultimaVerificacionStr != null 
-          ? DateTime.parse(ultimaVerificacionStr) 
-          : null;
-      final ahora = DateTime.now();
-      
-      // Verificar solo una vez al día
-      if (ultimaVerificacion != null) {
-        final diasDesdeUltimaVerificacion = ahora.difference(ultimaVerificacion).inDays;
-        if (diasDesdeUltimaVerificacion < 1) {
-          return; // Ya se verificó hoy
-        }
-      }
-      
-      // Guardar fecha de última verificación
-      await prefs.setString('ultima_verificacion_nivel5', ahora.toIso8601String());
-      
-      if (!isLevel5) {
-        // Si no está en nivel 5, resetear contador
-        await prefs.setInt('meses_en_nivel5', 0);
-        await prefs.remove('fecha_primer_nivel5');
-        setState(() {
-          _mesesEnNivel5 = 0;
-          _fechaPrimerNivel5 = null;
-        });
-        return;
-      }
-      
-      // Si está en nivel 5, verificar meses
-      if (_fechaPrimerNivel5 == null) {
-        // Primera vez que alcanza nivel 5
-        await prefs.setString('fecha_primer_nivel5', ahora.toIso8601String());
-        await prefs.setInt('meses_en_nivel5', 0);
-        setState(() {
-          _fechaPrimerNivel5 = ahora;
-          _mesesEnNivel5 = 0;
-        });
-        return;
-      }
-      
-      // Calcular meses transcurridos desde que alcanzó nivel 5
-      // Usar diferencia de meses calendario para mayor precisión
-      final mesesTranscurridos = _calcularMesesConsecutivos(_fechaPrimerNivel5!, ahora);
-      
-      // Actualizar si han pasado más meses
-      if (mesesTranscurridos > _mesesEnNivel5) {
-        await prefs.setInt('meses_en_nivel5', mesesTranscurridos);
-        setState(() {
-          _mesesEnNivel5 = mesesTranscurridos;
-        });
-      }
-    } catch (e) {
-      print('Error verificando meses en nivel 5: $e');
-    }
-  }
-  
-  // Calcular meses consecutivos entre dos fechas
-  int _calcularMesesConsecutivos(DateTime inicio, DateTime fin) {
-    int meses = 0;
-    DateTime fechaActual = DateTime(inicio.year, inicio.month, 1);
-    final fechaFin = DateTime(fin.year, fin.month, 1);
-    
-    while (fechaActual.isBefore(fechaFin) || fechaActual.isAtSameMomentAs(fechaFin)) {
-      meses++;
-      fechaActual = DateTime(fechaActual.year, fechaActual.month + 1, 1);
-    }
-    
-    return meses;
+    return totalPoints >= _getRequiredPoints(imageNumber);
   }
 
   // Obtener la ruta de la imagen (normal o "-no")
@@ -645,12 +529,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
         // Selector de imágenes de perfil - Grid de 6 imágenes
         Consumer<UserManager>(
           builder: (context, userManager, child) {
-            final rachaPoints = userManager.rachaPoints;
-            
-            // Verificar y actualizar meses en nivel 5 cuando cambian los puntos
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _checkAndUpdateMesesEnNivel5();
-            });
+            final puntosApp = userManager.puntos;
+            final puntosJuego = userManager.gamePoints;
+            final totalPoints = puntosApp + puntosJuego;
             
             return Column(
               children: [
@@ -658,7 +539,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [1, 2, 3].map((imageNumber) {
-                    return _buildProfileImageSelector(imageNumber, rachaPoints);
+                    return _buildProfileImageSelector(imageNumber, totalPoints);
                   }).toList(),
                 ),
                 SizedBox(height: 15),
@@ -666,7 +547,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [4, 5, 6].map((imageNumber) {
-                    return _buildProfileImageSelector(imageNumber, rachaPoints);
+                    return _buildProfileImageSelector(imageNumber, totalPoints);
                   }).toList(),
                 ),
               ],
@@ -884,9 +765,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
         final ultimaSesion = userManager.ultimaSesion;
         final fechaInicioRacha = userManager.fechaInicioRacha;
         final puntosApp = userManager.puntos;
-        final puntosRacha = userManager.rachaPoints;
+        final puntosSnippets = userManager.puntosSnippets;
         final puntosDiarios = userManager.puntosDiarios;
-        final rachaDias = userManager.rachaDias;
+        final puntosRacha = userManager.rachaDias;
         final puntosJuego = userManager.gamePoints;
 
         final puntosTotales = puntosApp + puntosJuego;
@@ -913,9 +794,9 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildPuntosDetalleItem('Puntos App (totales)', '$puntosApp', Colors.deepPurpleAccent),
-                  _buildPuntosDetalleItem('Puntos por Racha', '$puntosRacha', Colors.purple.shade200),
+                  _buildPuntosDetalleItem('Puntos por Snippets', '$puntosSnippets', Colors.purple.shade200),
                   _buildPuntosDetalleItem('Puntos por Sesiones Diarias', '$puntosDiarios', Colors.purple.shade200),
-                  _buildPuntosDetalleItem('Racha actual', '${rachaDias} días', Colors.purple.shade200),
+                  _buildPuntosDetalleItem('Racha actual', '${puntosRacha} días', Colors.purple.shade200),
                   SizedBox(height: 10),
                   _buildPuntosDetalleItem('Puntos Juego acumulados', '$puntosJuego', Colors.green),
                   _buildPuntosDetalleItem('Puntos Totales Usuario', '$puntosTotales', Colors.amber),

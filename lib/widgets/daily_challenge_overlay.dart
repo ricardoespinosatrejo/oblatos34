@@ -190,8 +190,11 @@ class _DailyChallengeOverlayState extends State<DailyChallengeOverlay>
     final userManager = Provider.of<UserManager>(context);
     final rachaDias = userManager.rachaDias;
     
-    // Obtener la ruta de la imagen de la ventana
-    final windowImagePath = 'assets/images/rachacoop/racha-window/${widget.challenge.windowImage}';
+    // Obtener la ruta de la imagen de la ventana (ya viene completa desde el servicio)
+    final windowImagePath = widget.challenge.windowImage;
+    
+    final screenSize = MediaQuery.of(context).size;
+    final padding = MediaQuery.of(context).padding;
     
     return Material(
       color: Colors.transparent,
@@ -200,29 +203,38 @@ class _DailyChallengeOverlayState extends State<DailyChallengeOverlay>
         builder: (context, child) {
           return Opacity(
             opacity: _fadeAnimation.value,
-            child: Stack(
-              children: [
-                // Fondo con GestureDetector para cerrar (permitir cerrar trivia también)
-                GestureDetector(
-                  onTap: () {
-                    // Permitir cerrar siempre (incluyendo trivia)
-                    _closeOverlay();
-                  },
-                  behavior: HitTestBehavior.translucent, // Permitir que los toques pasen a los botones
-                  child: Container(
-                    width: double.infinity,
-                    height: double.infinity,
-                    child: Stack(
-                      children: [
-                        // Fondo de snippets a pantalla completa (igual que en snippets)
-                        Positioned.fill(
-                          child: Image.asset(
-                            'assets/images/snippets/Snippets-back.jpg',
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
+            child: Container(
+              width: screenSize.width,
+              height: screenSize.height,
+              margin: EdgeInsets.zero, // Sin márgenes
+              child: Stack(
+                children: [
+                  // Fondo con GestureDetector para cerrar (permitir cerrar trivia también)
+                  GestureDetector(
+                    onTap: () {
+                      // Permitir cerrar siempre (incluyendo trivia)
+                      _closeOverlay();
+                    },
+                    behavior: HitTestBehavior.translucent, // Permitir que los toques pasen a los botones
+                    child: Container(
+                      width: screenSize.width,
+                      height: screenSize.height,
+                      margin: EdgeInsets.only(
+                        top: -padding.top, // Extender hacia arriba
+                        bottom: -padding.bottom, // Extender hacia abajo
+                      ),
+                      child: Stack(
+                        children: [
+                          // Fondo de snippets a pantalla completa (ocupando toda la pantalla incluyendo SafeArea)
+                          Positioned.fill(
+                            child: Image.asset(
+                              'assets/images/snippets/Snippets-back.jpg',
+                              width: screenSize.width,
+                              height: screenSize.height + padding.top + padding.bottom,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.center,
+                            ),
                           ),
-                        ),
                         
                         // Contenido del overlay
                         Stack(
@@ -527,7 +539,8 @@ class _DailyChallengeOverlayState extends State<DailyChallengeOverlay>
                       ),
                     ),
                   ),
-              ],
+                ],
+              ),
             ),
           );
         },

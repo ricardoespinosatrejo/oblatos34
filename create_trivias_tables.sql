@@ -66,3 +66,6 @@ SHOW TABLES LIKE 'daily_challenge%';
 
 
 
+
+
+

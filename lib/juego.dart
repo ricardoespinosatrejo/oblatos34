@@ -10,7 +10,6 @@ import '../user_manager.dart';
 import '../services/snippet_service.dart';
 import '../services/daily_challenge_service.dart';
 import '../widgets/daily_challenge_overlay.dart';
-import '../widgets/challenge_success_overlay.dart';
 
 class LevelConfig {
   final int pointsToNext;
@@ -500,6 +499,9 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           _coinsCollected++; // Incrementar contador de monedas
           coinCollected = true; // Marcar que se recolectó una moneda
           _spawnCoinParticles(element.value);
+          
+          // Verificar si se completó el reto de monedas
+          _checkCoinChallenge();
           // Activación de escudo por puntos acumulados
           // Nivel 3: cada 100; Niveles >=4: cada 200; Niveles 1-2: cada 50. Desactivado en nivel 5.
           final int shieldThreshold = (_level >= 4) ? 200 : (_level == 3 ? 100 : 50);
@@ -758,9 +760,156 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       _level = 1;
       _lives = 3;
       _elements.clear();
+      _coinsCollected = 0; // Resetear contador de monedas
     });
     
     _gameOverAnimationController.reset();
+  }
+  
+  /// Verificar si se completó el reto de monedas
+  Future<void> _checkCoinChallenge() async {
+    try {
+      final challengeService = DailyChallengeService();
+      final challenge = await challengeService.getTodayChallenge();
+      
+      if (challenge == null || challenge.type != ChallengeType.coins) {
+        return; // No hay reto de monedas hoy
+      }
+      
+      // Verificar si ya se completó
+      final isCompleted = await challengeService.isChallengeCompleted();
+      if (isCompleted) {
+        return; // Ya se completó
+      }
+      
+      // Verificar si se alcanzó el objetivo (50 monedas por defecto)
+      final targetValue = challenge.targetValue ?? 50;
+      if (_coinsCollected >= targetValue) {
+        print('🎯 Reto de monedas completado: $_coinsCollected/$targetValue');
+        
+        // Completar el reto
+        await challengeService.completeChallenge();
+        
+        final userManager = Provider.of<UserManager>(context, listen: false);
+        
+        // Llamar al PHP para registrar la completación
+        try {
+          final user = userManager.currentUser;
+          if (user != null && user['id'] != null) {
+            final response = await http.post(
+              Uri.parse('https://zumuradigital.com/app-oblatos-login/complete_daily_challenge.php'),
+              headers: {'Content-Type': 'application/json'},
+              body: jsonEncode({
+                'user_id': user['id'],
+                'challenge_type': 'coins',
+                'challenge_data': {
+                  'coins_collected': _coinsCollected,
+                  'target_value': targetValue,
+                },
+              }),
+            );
+            print('🎯 Respuesta complete_daily_challenge: ${response.statusCode} - ${response.body}');
+            
+            if (response.statusCode == 200) {
+              final responseData = jsonDecode(response.body);
+              if (responseData['success'] == true && responseData['racha_points_total'] != null) {
+                userManager.updateRachaPoints(int.tryParse(responseData['racha_points_total'].toString()) ?? 0);
+              }
+            }
+          }
+        } catch (e) {
+          print('❌ Error registrando completación de reto: $e');
+        }
+        
+        // Mostrar pantalla de confirmación
+        if (mounted) {
+          await _showChallengeCompletedDialog();
+        }
+      }
+    } catch (e) {
+      print('❌ Error verificando reto de monedas: $e');
+    }
+  }
+  
+  /// Mostrar diálogo de reto completado
+  Future<void> _showChallengeCompletedDialog() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            '¡Reto Completado!',
+            style: TextStyle(
+              fontFamily: 'Gotham Rounded',
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF4CAF50),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.check_circle,
+                color: Color(0xFF4CAF50),
+                size: 60,
+              ),
+              SizedBox(height: 16),
+              Text(
+                '¡Felicidades! Has completado el reto de ganar 50 monedas.',
+                style: TextStyle(
+                  fontFamily: 'Gotham Rounded',
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Monedas recolectadas: $_coinsCollected',
+                style: TextStyle(
+                  fontFamily: 'Gotham Rounded',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFFFD700),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF4CAF50),
+                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                child: Text(
+                  '¡Genial!',
+                  style: TextStyle(
+                    fontFamily: 'Gotham Rounded',
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
   
   @override
@@ -1450,7 +1599,43 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           right: 20,
           child: Column(
             children: [
-              // Primera fila: Puntuación, Monedas y Nivel
+              // Primera fila: Monedas (arriba del marcador de puntos)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.monetization_on,
+                          color: Color(0xFFFFD700),
+                          size: 18,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          'Monedas: $_coinsCollected',
+                          style: TextStyle(
+                            fontFamily: 'Gotham Rounded',
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              
+              SizedBox(height: 10),
+              
+              // Segunda fila: Puntuación y Nivel
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -1469,29 +1654,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
-                    ),
-                  ),
-                  
-                  // Monedas
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Monedas: $_coinsCollected',
-                          style: TextStyle(
-                            fontFamily: 'Gotham Rounded',
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                   
@@ -1993,79 +2155,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
     );
   }
   
-  /// Verificar si se completó el reto diario de monedas
-  Future<void> _checkDailyChallengeCompletion() async {
-    try {
-      final challengeService = DailyChallengeService();
-      final challenge = await challengeService.getTodayChallenge();
-      
-      if (challenge == null || challenge.type != ChallengeType.coins) {
-        return; // No hay reto de monedas hoy
-      }
-      
-      // Verificar si ya se completó
-      final isCompleted = await challengeService.isChallengeCompleted();
-      if (isCompleted) {
-        return; // Ya se completó
-      }
-      
-      // Verificar si se cumplió el objetivo
-      if (challenge.targetValue != null && _coinsCollected >= challenge.targetValue!) {
-        // ¡Reto completado!
-        await challengeService.completeChallenge();
-        final userManager = Provider.of<UserManager>(context, listen: false);
-        
-        // Llamar al PHP para registrar la completación
-        try {
-          final user = userManager.currentUser;
-          if (user != null && user['id'] != null) {
-            final response = await http.post(
-              Uri.parse('https://zumuradigital.com/app-oblatos-login/complete_daily_challenge.php'),
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({
-                'user_id': user['id'],
-                'challenge_type': 'coins',
-                'challenge_data': {
-                  'target': challenge.targetValue,
-                  'coins_collected': _coinsCollected,
-                },
-              }),
-            );
-            print('🎯 Respuesta complete_daily_challenge: ${response.statusCode} - ${response.body}');
-            
-            if (response.statusCode == 200) {
-              final responseData = jsonDecode(response.body);
-              if (responseData['success'] == true && responseData['racha_points_total'] != null) {
-                userManager.updateRachaPoints(int.tryParse(responseData['racha_points_total'].toString()) ?? 0);
-              }
-            }
-          }
-        } catch (e) {
-          print('❌ Error registrando completación de reto: $e');
-        }
-        
-        userManager.completarRetoDiario();
-        
-        // Mostrar ventana de éxito
-        if (mounted) {
-          await showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return ChallengeSuccessOverlay(
-                onClose: () {
-                  Navigator.of(context).pop();
-                },
-              );
-            },
-          );
-        }
-      }
-    } catch (e) {
-      print('Error verificando reto diario: $e');
-    }
-  }
-  
   void _saveGameScore() async {
     try {
       // Obtener información del usuario
@@ -2092,9 +2181,6 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
           print('Puntaje guardado correctamente: ${data['score_id']}');
           userManager.refreshGamePoints();
           _loadTop10();
-          
-          // Verificar si se completó el reto diario de monedas
-          await _checkDailyChallengeCompletion();
         } else {
           print('Error al guardar puntaje: ${data['error']}');
         }
@@ -2111,27 +2197,52 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       setState(() {
         _loadingRanking = true;
       });
+      
+      print('🎮 Cargando ranking desde: https://zumuradigital.com/app-oblatos-login/get_game_ranking.php?type=highest&limit=10');
+      
       // Usar el mismo backend donde ya funciona el ranking (app-oblatos-login)
-      final res = await http.get(Uri.parse('https://zumuradigital.com/app-oblatos-login/get_game_ranking.php?type=highest&limit=10'));
+      final res = await http.get(
+        Uri.parse('https://zumuradigital.com/app-oblatos-login/get_game_ranking.php?type=highest&limit=10')
+      );
+      
+      print('🎮 Respuesta ranking: ${res.statusCode} - ${res.body}');
+      
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
-        final List<dynamic> ranking = (data is Map && data['success'] == true && data['ranking'] is List)
-            ? List<dynamic>.from(data['ranking'])
-            : [];
-        setState(() {
-          _top10 = ranking;
-          _loadingRanking = false;
-          _showRanking = true;
-        });
+        print('🎮 Datos parseados: $data');
+        
+        if (data is Map && data['success'] == true) {
+          final List<dynamic> ranking = (data['ranking'] is List)
+              ? List<dynamic>.from(data['ranking'])
+              : [];
+          
+          print('🎮 Ranking cargado: ${ranking.length} elementos');
+          
+          setState(() {
+            _top10 = ranking;
+            _loadingRanking = false;
+            _showRanking = true;
+          });
+        } else {
+          print('🎮 Error en respuesta: success=false o formato inválido');
+          print('🎮 Error message: ${data['error'] ?? 'No hay error en la respuesta'}');
+          setState(() {
+            _top10 = [];
+            _loadingRanking = false;
+            _showRanking = true;
+          });
+        }
       } else {
+        print('🎮 Error HTTP: ${res.statusCode}');
         setState(() {
           _top10 = [];
           _loadingRanking = false;
           _showRanking = true;
         });
       }
-    } catch (e) {
-      print('Error cargando ranking: $e');
+    } catch (e, stackTrace) {
+      print('🎮 Error cargando ranking: $e');
+      print('🎮 Stack trace: $stackTrace');
       setState(() {
         _top10 = [];
         _loadingRanking = false;

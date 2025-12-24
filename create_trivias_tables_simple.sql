@@ -62,3 +62,6 @@ CREATE TABLE IF NOT EXISTS daily_challenges_completed (
 
 
 
+
+
+

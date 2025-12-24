@@ -190,9 +190,8 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
             // Header de navegación reutilizable
             HeaderNavigation(
               onMenuTap: () => Navigator.pop(context),
-              title: 'SECCIÓN',
+              title: 'BIENVENIDOS',
               subtitle: 'EVENTOS Y\nCAMPAÑAS',
-              leftPadding: 15,
             ),
             
             // Barra de búsqueda
@@ -325,6 +324,8 @@ class _EventosPageState extends State<EventosPage> with TickerProviderStateMixin
             
             // Submenu (se muestra cuando se activa)
             if (_isSubmenuVisible) _buildEventosSubmenu(),
+            
+            // Menú rojo inferior eliminado - ya no se usa
           ],
         ),
       ),
@@ -765,9 +766,8 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
                     onMenuTap: () {
                       Navigator.pushNamed(context, '/menu');
                     },
-                    title: 'SECCIÓN',
+                    title: 'BIENVENIDOS',
                     subtitle: 'EVENTOS Y\nCAMPAÑAS',
-                    leftPadding: 15,
                   ),
                   
                   // Barra de búsqueda
@@ -895,6 +895,8 @@ class _EventosScreenState extends State<EventosScreen> with TickerProviderStateM
             
             // Submenu (se muestra cuando se activa)
             if (_isSubmenuVisible) _buildEventosSubmenu(),
+            
+            // Menú rojo inferior eliminado - ya no se usa
           ],
         ),
       ),

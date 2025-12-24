@@ -14,6 +14,10 @@ import 'widgets/challenge_success_overlay.dart';
 import 'user_manager.dart';
 
 class VideoBlogScreen extends StatefulWidget {
+  final int? initialVideo; // Video inicial a mostrar (1-5), null para mostrar lista
+  
+  const VideoBlogScreen({Key? key, this.initialVideo}) : super(key: key);
+  
   @override
   _VideoBlogScreenState createState() => _VideoBlogScreenState();
 }
@@ -49,10 +53,19 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
       parent: _submenuAnimationController,
       curve: Curves.easeOutCubic,
     ));
-    // Animar los botones de video secuencialmente
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _animateButtonsSequentially();
-    });
+    
+    // Si hay un video inicial, configurarlo
+    if (widget.initialVideo != null && widget.initialVideo! >= 1 && widget.initialVideo! <= 5) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Reproducir el video directamente
+        _playVideo(widget.initialVideo!);
+      });
+    } else {
+      // Animar los botones de video secuencialmente
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _animateButtonsSequentially();
+      });
+    }
   }
   
   @override

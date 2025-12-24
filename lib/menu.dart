@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'user_manager.dart';
 import 'widgets/animated_profile_image.dart';
+import 'services/daily_challenge_service.dart';
+import 'widgets/daily_challenge_overlay.dart';
 import 'utils/challenge_helper.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -25,12 +28,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late Animation<Offset> _submenuSlideAnimation;
   late Animation<Offset> _cooperativaSwipeAnimation;
   final AudioPlayer _centerButtonPlayer = AudioPlayer();
+  
+  // Servicio de retos diarios
+  final DailyChallengeService _challengeService = DailyChallengeService();
 
   @override
   void initState() {
     super.initState();
     
-    // Inicializar controladores de animación para los 4 botones principales
+    // Inicializar controladores de animación para los 4 botones
     _buttonAnimationControllers = List.generate(4, (index) => 
       AnimationController(
         duration: Duration(milliseconds: 1000), // 1 segundo
@@ -75,16 +81,141 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       curve: Curves.easeInOutCubic,
     ));
     
-    // Mostrar ventana de reto diario después de que la pantalla se monte
+    // Verificar y mostrar reto diario automáticamente después de que la pantalla se carga
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(Duration(milliseconds: 500), () {
-        if (mounted) {
-          ChallengeHelper.showDailyChallengeIfNeeded(context);
-        }
-      });
+      _checkAndShowDailyChallenge();
     });
   }
   
+  void _toggleCooperativaView() async {
+    if (_isCooperativaViewVisible) {
+      // Si está visible, animar hacia la derecha y ocultar
+      _cooperativaSwipeController.reverse().then((_) {
+        if (mounted) {
+          setState(() {
+            _isCooperativaViewVisible = false;
+          });
+        }
+      });
+    } else {
+      // Si está oculto, mostrar y animar desde la derecha
+      setState(() {
+        _isCooperativaViewVisible = true;
+      });
+      _cooperativaSwipeController.forward();
+      try {
+        await _centerButtonPlayer.play(AssetSource('audios/ding.mp3'));
+      } catch (_) {}
+    }
+  }
+  
+  /// Verificar y mostrar el reto diario si no se ha mostrado hoy
+  Future<void> _checkAndShowDailyChallenge() async {
+    try {
+      final challenge = await _challengeService.getTodayChallenge();
+      if (challenge == null) {
+        print('ℹ️ No hay reto diario para hoy');
+        return;
+      }
+      
+      // Verificar si ya se mostró hoy
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateTime.now();
+      final todayKey = '${today.year}-${today.month}-${today.day}';
+      final lastShown = prefs.getString('daily_challenge_last_shown');
+      final isCompleted = await _challengeService.isChallengeCompleted();
+      final recoveryTriviaShown = prefs.getBool('recovery_trivia_shown_$todayKey') ?? false;
+      final isAccepted = await _challengeService.isChallengeAccepted();
+      
+      print('🎯 Verificando reto diario: lastShown=$lastShown, todayKey=$todayKey, isCompleted=$isCompleted, isAccepted=$isAccepted, recoveryTriviaShown=$recoveryTriviaShown');
+      
+      // Mostrar el reto si:
+      // 1. No está completado
+      // 2. No está aceptado (aunque se haya mostrado antes, si no se aceptó, se puede volver a mostrar)
+      // 3. No se mostró la trivia de recuperación hoy
+      // 4. El widget está montado
+      if (!isCompleted && !isAccepted && !recoveryTriviaShown && mounted) {
+        print('🎯 Mostrando reto diario automáticamente');
+        // Esperar más tiempo para asegurar que la pantalla esté completamente cargada
+        // y que cualquier diálogo anterior (como la trivia de recuperación) se haya cerrado
+        await Future.delayed(Duration(milliseconds: 2000)); // Aumentado a 2 segundos
+        
+        if (!mounted) {
+          print('❌ Widget no está montado después del delay');
+          return;
+        }
+        
+        // Verificar nuevamente el estado después del delay (por si cambió)
+        final isAcceptedAfterDelay = await _challengeService.isChallengeAccepted();
+        final isCompletedAfterDelay = await _challengeService.isChallengeCompleted();
+        final recoveryTriviaShownAfterDelay = prefs.getBool('recovery_trivia_shown_$todayKey') ?? false;
+        
+        if (isCompletedAfterDelay || isAcceptedAfterDelay || recoveryTriviaShownAfterDelay) {
+          print('ℹ️ Estado cambió después del delay: isCompleted=$isCompletedAfterDelay, isAccepted=$isAcceptedAfterDelay, recoveryTriviaShown=$recoveryTriviaShownAfterDelay');
+          return;
+        }
+        
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) {
+            return DailyChallengeOverlay(
+              challenge: challenge,
+              onClose: () {
+                Navigator.of(dialogContext).pop();
+              },
+              onChallengeAccepted: () async {
+                Navigator.of(dialogContext).pop();
+                // Marcar el reto como aceptado (esto también guarda lastShown)
+                await _challengeService.acceptChallenge();
+                
+                // Navegar según el tipo de reto
+                if (challenge.type == ChallengeType.coins) {
+                  // Navegar al juego
+                  Navigator.pushNamed(context, '/juego');
+                } else if (challenge.type == ChallengeType.video) {
+                  // Extraer el número del video del videoId (ej: "video_1" -> 1, "video_5" -> 5)
+                  int? videoNumber;
+                  if (challenge.videoId != null) {
+                    final videoIdStr = challenge.videoId.toString();
+                    final match = RegExp(r'video_(\d+)').firstMatch(videoIdStr);
+                    if (match != null) {
+                      videoNumber = int.tryParse(match.group(1)!);
+                    }
+                  }
+                  
+                  // Navegar al video blog con el video específico
+                  if (videoNumber != null && videoNumber >= 1 && videoNumber <= 5) {
+                    Navigator.pushNamed(
+                      context,
+                      '/video-blog',
+                      arguments: videoNumber,
+                    );
+                  } else {
+                    // Si no se puede determinar el video, navegar a la lista
+                    Navigator.pushNamed(context, '/video-blog');
+                  }
+                } else if (challenge.type == ChallengeType.trivia) {
+                  // Mostrar trivia directamente
+                  final userManager = Provider.of<UserManager>(context, listen: false);
+                  ChallengeHelper.showTriviaChallenge(
+                    context,
+                    challenge,
+                    _challengeService,
+                    userManager,
+                  );
+                }
+              },
+            );
+          },
+        );
+      } else {
+        print('ℹ️ Reto diario ya mostrado o completado hoy: isCompleted=$isCompleted, isAccepted=$isAccepted, recoveryTriviaShown=$recoveryTriviaShown');
+      }
+    } catch (e) {
+      print('❌ Error verificando reto diario: $e');
+    }
+  }
   
   void _startButtonAnimations() {
     for (int i = 0; i < _buttonAnimationControllers.length; i++) {
@@ -112,28 +243,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         _isSubmenuVisible = true;
       });
       _submenuAnimationController.forward();
-      try {
-        await _centerButtonPlayer.play(AssetSource('audios/ding.mp3'));
-      } catch (_) {}
-    }
-  }
-  
-  void _toggleCooperativaView() async {
-    if (_isCooperativaViewVisible) {
-      // Si está visible, animar hacia la derecha y ocultar
-      _cooperativaSwipeController.reverse().then((_) {
-        if (mounted) {
-          setState(() {
-            _isCooperativaViewVisible = false;
-          });
-        }
-      });
-    } else {
-      // Si está oculto, mostrar y animar desde la derecha
-      setState(() {
-        _isCooperativaViewVisible = true;
-      });
-      _cooperativaSwipeController.forward();
       try {
         await _centerButtonPlayer.play(AssetSource('audios/ding.mp3'));
       } catch (_) {}
@@ -181,7 +290,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                SizedBox(height: 40),
+                                SizedBox(height: 30),
                                 
                                 // Botones principales con animaciones fade in
                                 // 1. Rachacoop (Rojo)
@@ -242,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                SizedBox(height: 40),
+                                SizedBox(height: 30),
                                 
                                 // Botón de volver
                                 Align(
@@ -392,6 +501,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             // Submenu (se muestra cuando se activa)
             if (_isSubmenuVisible) _buildSubmenu(),
             
+            // Menú rojo inferior eliminado - ya no se usa
+            
 // Menú lateral eliminado - ya no se usa
           ],
         ),
@@ -409,13 +520,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         children: [
           // Título central centrado
           Positioned(
-            left: 15,
+            left: 0,
             right: 0,
             top: 0,
             child: Column(
               children: [
                 Text(
-                  '¡HOLA!',
+                  'BIENVENIDOS',
                   style: TextStyle(
                     fontFamily: 'Gotham Rounded',
                     fontSize: 19,
@@ -1293,147 +1404,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSubmenu() {
-    return Positioned(
-      bottom: -10, // Más pegado al borde inferior de la pantalla
-      left: 0,
-      right: 0,
-      child: SlideTransition(
-        position: _submenuSlideAnimation,
-        child: Container(
-          height: 375,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/submenu/plasta-menu.png'),
-              fit: BoxFit.cover,
-            ),
-          ),
-          child: Stack(
-            children: [
-              // Título "Herramientas Financieras"
-              Positioned(
-                top: 40, // Centrado entre borde superior y botones
-                left: 0,
-                right: 0,
-                child: Text(
-                  'Herramientas Financieras',
-                  style: TextStyle(
-                    fontFamily: 'GothamRounded',
-                    fontSize: 14,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              
-              // Elementos decorativos - Monedas
-              Positioned(
-                top: 68, // Misma altura que btn-juego
-                left: 0, // Pegada totalmente al borde izquierdo
-                child: Image.asset(
-                  'assets/images/submenu/moneda2.png',
-                  width: 30,
-                  height: 130,
-                ),
-              ),
-              Positioned(
-                top: 58, // 10px más arriba que antes
-                right: 10, // 10px separada del borde derecho
-                child: Image.asset(
-                  'assets/images/submenu/moneda1.png',
-                  width: 46,
-                  height: 47,
-                ),
-              ),
-              
-              // Botones del submenu
-              Positioned(
-                top: 68,
-                left: 0,
-                right: 0,
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/juego');
-                          },
-                          child: Image.asset(
-                            'assets/images/submenu/btn-juego.png',
-                            height: 156,
-                          ),
-                        ),
-                        SizedBox(width: 9), // Gap de 9px entre botones
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/calculadora');
-                          },
-                          child: Image.asset(
-                            'assets/images/submenu/btn-calculadora.png',
-                            height: 150,
-                          ),
-                        ),
-                      ],
-                    ),
-                    
-                    // Etiquetas de los botones
-                    SizedBox(height: 10), // Espacio entre botones y etiquetas
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Etiqueta "Juego" - Movida 10px a la derecha
-                        Transform.translate(
-                          offset: Offset(20, 0), // Mover 20px a la derecha (10px + 10px más)
-                          child: SizedBox(
-                            width: 156, // Mismo ancho que btn-juego
-                            child: Text(
-                              'Juego',
-                              style: TextStyle(
-                                fontFamily: 'GothamRounded',
-                                fontSize: 12,
-                                color: Colors.black,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 9), // Gap de 9px entre etiquetas
-                        // Etiqueta "Calculadora" - Movida 15px a la izquierda
-                        Transform.translate(
-                          offset: Offset(-18, 0), // Mover 18px a la izquierda (15px + 3px más)
-                          child: SizedBox(
-                            width: 150, // Mismo ancho que btn-calculadora
-                            child: Text(
-                              'Calculadora',
-                              style: TextStyle(
-                                fontFamily: 'GothamRounded',
-                                fontSize: 12,
-                                color: Colors.black,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-// Menú lateral eliminado - ya no se usa
-
   Widget _buildRachacoopButton(VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -1709,16 +1679,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
-  
-  /// Obtener número de nivel (1-5) basado en puntos de racha
-  int _getLevelNumber(int rachaPoints) {
-    if (rachaPoints >= 2001) return 5;
-    if (rachaPoints >= 1201) return 4;
-    if (rachaPoints >= 501) return 3;
-    if (rachaPoints >= 101) return 2;
-    return 1;
-  }
-  
+
   Widget _buildCooperativaSectionButton(String title, String subtitle, String iconPath, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
@@ -1810,15 +1771,299 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
     );
   }
+
+  // Menú rojo inferior eliminado - ya no se usa
+  Widget _buildBottomNavigation() {
+    return Container(
+      height: 98,
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/menu/menu-barra.png'),
+          fit: BoxFit.cover,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.18),
+            blurRadius: 16,
+            spreadRadius: 2,
+            offset: Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildNavItem('m-icono1.png', 'Caja\nOblatos', '/caja'),
+          _buildNavItem('m-icono2.png', 'Agentes\nCambio', '/agentes-cambio'),
+          _buildCenterNavItem('m-icono3.png'),
+          _buildNavItem('m-icono4.png', 'Eventos', '/eventos'),
+          _buildNavItem('m-icono5.png', 'Video\nBlog', '/video-blog'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(String iconPath, String label, String? route, {bool isCenter = false}) {
+    return GestureDetector(
+      onTap: route != null ? () => Navigator.pushNamed(context, route) : null,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: isCenter ? 68 : 25,
+            height: isCenter ? 68 : 25,
+            decoration: isCenter ? BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  Color(0xFFFF1744),
+                  Color(0xFFE91E63),
+                ],
+              ),
+              border: Border.all(color: Colors.black, width: 1),
+            ) : null,
+            child: isCenter ? Center(
+              child: Image.asset(
+                'assets/images/menu/$iconPath',
+                width: 24,
+                height: 24,
+                color: Colors.white,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(Icons.home, color: Colors.white, size: 24);
+                },
+              ),
+            ) : Image.asset(
+              'assets/images/menu/$iconPath',
+              width: 8,
+              height: 8,
+              color: Colors.white,
+              errorBuilder: (context, error, stackTrace) {
+                return Icon(Icons.home, color: Colors.white, size: 8);
+              },
+            ),
+          ),
+          if (!isCenter && label.isNotEmpty) ...[
+            SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Gotham Rounded',
+                fontSize: 10,
+                fontWeight: FontWeight.w400,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCenterNavItem(String iconPath) {
+    return Transform.translate(
+      offset: Offset(-6, -14),
+      child: GestureDetector(
+        onTap: _toggleSubmenu,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Color(0xFFFF1744),
+                    Color(0xFFE91E63),
+                  ],
+                ),
+                border: Border.all(color: Colors.black, width: 1),
+              ),
+              child: Center(
+                child: Image.asset(
+                  'assets/images/menu/$iconPath',
+                  width: 24,
+                  height: 24,
+                  color: Colors.white,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.home, color: Colors.white, size: 24);
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   
+  Widget _buildSubmenu() {
+    return Positioned(
+      bottom: -10, // Más pegado al borde inferior de la pantalla
+      left: 0,
+      right: 0,
+      child: SlideTransition(
+        position: _submenuSlideAnimation,
+        child: Container(
+          height: 375,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/submenu/plasta-menu.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Stack(
+            children: [
+              // Título "Herramientas Financieras"
+              Positioned(
+                top: 40, // Centrado entre borde superior y botones
+                left: 0,
+                right: 0,
+                child: Text(
+                  'Herramientas Financieras',
+                  style: TextStyle(
+                    fontFamily: 'GothamRounded',
+                    fontSize: 14,
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              
+              // Elementos decorativos - Monedas
+              Positioned(
+                top: 68, // Misma altura que btn-juego
+                left: 0, // Pegada totalmente al borde izquierdo
+                child: Image.asset(
+                  'assets/images/submenu/moneda2.png',
+                  width: 30,
+                  height: 130,
+                ),
+              ),
+              Positioned(
+                top: 58, // 10px más arriba que antes
+                right: 10, // 10px separada del borde derecho
+                child: Image.asset(
+                  'assets/images/submenu/moneda1.png',
+                  width: 46,
+                  height: 47,
+                ),
+              ),
+              
+              // Botones del submenu
+              Positioned(
+                top: 68,
+                left: 0,
+                right: 0,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(context, '/juego');
+                          },
+                          child: Image.asset(
+                            'assets/images/submenu/btn-juego.png',
+                            height: 156,
+                          ),
+                        ),
+                        SizedBox(width: 9), // Gap de 9px entre botones
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(context, '/calculadora');
+                          },
+                          child: Image.asset(
+                            'assets/images/submenu/btn-calculadora.png',
+                            height: 150,
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    // Etiquetas de los botones
+                    SizedBox(height: 10), // Espacio entre botones y etiquetas
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Etiqueta "Juego" - Movida 10px a la derecha
+                        Transform.translate(
+                          offset: Offset(20, 0), // Mover 20px a la derecha (10px + 10px más)
+                          child: SizedBox(
+                            width: 156, // Mismo ancho que btn-juego
+                            child: Text(
+                              'Juego',
+                              style: TextStyle(
+                                fontFamily: 'GothamRounded',
+                                fontSize: 12,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 9), // Gap de 9px entre etiquetas
+                        // Etiqueta "Calculadora" - Movida 15px a la izquierda
+                        Transform.translate(
+                          offset: Offset(-18, 0), // Mover 18px a la izquierda (15px + 3px más)
+                          child: SizedBox(
+                            width: 150, // Mismo ancho que btn-calculadora
+                            child: Text(
+                              'Calculadora',
+                              style: TextStyle(
+                                fontFamily: 'GothamRounded',
+                                fontSize: 12,
+                                color: Colors.black,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+// Menú lateral eliminado - ya no se usa
+
+  /// Obtener número de nivel (1-5) basado en puntos de racha
+  int _getLevelNumber(int rachaPoints) {
+    if (rachaPoints >= 2001) return 5;
+    if (rachaPoints >= 1201) return 4;
+    if (rachaPoints >= 501) return 3;
+    if (rachaPoints >= 101) return 2;
+    return 1;
+  }
+
   @override
   void dispose() {
+    // Dispose de todos los controladores de animación de botones
     for (var controller in _buttonAnimationControllers) {
       controller.dispose();
     }
+    
+    // Dispose del controlador de animación del submenu
     _submenuAnimationController.dispose();
+    // Dispose del controlador de animación del swipe de Tu Cooperativa
     _cooperativaSwipeController.dispose();
     _centerButtonPlayer.dispose();
+    
     super.dispose();
   }
 }

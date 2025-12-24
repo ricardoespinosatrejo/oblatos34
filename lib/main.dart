@@ -57,7 +57,12 @@ class MyApp extends StatelessWidget {
           '/aprendiendo-cooperativa': (context) => aprendiendo.AprendiendoCooperativaScreen(),
           '/agentes-cambio': (context) => agentes.AgentesCambioScreen(),
           '/eventos': (context) => EventosPage(),
-          '/video-blog': (context) => videoblog.VideoBlogScreen(),
+          '/video-blog': (context) {
+            // Obtener el video inicial de los argumentos de la ruta
+            final args = ModalRoute.of(context)?.settings.arguments;
+            final initialVideo = args is int ? args : null;
+            return videoblog.VideoBlogScreen(initialVideo: initialVideo);
+          },
           '/perfil': (context) => PerfilScreen(),
           '/juego': (context) => GameScreen(),
           '/calculadora': (context) => CalculadoraScreen(),

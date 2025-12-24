@@ -81,6 +81,8 @@ class _RachacoopScreenState extends State<RachacoopScreen> {
   }
   
   Future<void> _acceptChallengeFromModule() async {
+    if (_todayChallenge == null) return;
+    
     // Marcar el reto como aceptado usando el servicio
     await _challengeService.acceptChallenge();
     
@@ -88,14 +90,36 @@ class _RachacoopScreenState extends State<RachacoopScreen> {
       _isChallengeAccepted = true;
     });
     
-    // Mostrar mensaje de confirmación
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('¡Reto aceptado! ¡Mucha suerte!'),
-        backgroundColor: Color(0xFF4ECDC4),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    // Navegar según el tipo de reto
+    if (_todayChallenge!.type == ChallengeType.coins) {
+      // Navegar al juego
+      Navigator.pushNamed(context, '/juego');
+    } else if (_todayChallenge!.type == ChallengeType.video) {
+      // Extraer el número del video del videoId (ej: "video_1" -> 1, "video_5" -> 5)
+      int? videoNumber;
+      if (_todayChallenge!.videoId != null) {
+        final videoIdStr = _todayChallenge!.videoId.toString();
+        final match = RegExp(r'video_(\d+)').firstMatch(videoIdStr);
+        if (match != null) {
+          videoNumber = int.tryParse(match.group(1)!);
+        }
+      }
+      
+      // Navegar al video blog con el video específico
+      if (videoNumber != null && videoNumber >= 1 && videoNumber <= 5) {
+        Navigator.pushNamed(
+          context,
+          '/video-blog',
+          arguments: videoNumber,
+        );
+      } else {
+        // Si no se puede determinar el video, navegar a la lista
+        Navigator.pushNamed(context, '/video-blog');
+      }
+    } else if (_todayChallenge!.type == ChallengeType.trivia) {
+      // Para trivias, ya se maneja en el botón con _showTriviaChallenge()
+      // No hacer nada aquí
+    }
   }
   
   Future<void> _showTriviaChallenge() async {
