@@ -38,7 +38,7 @@ class DailyChallengeService {
             type: ChallengeType.trivia,
             title: 'Responde la Trivia',
             description: 'Responde correctamente la trivia del día',
-            triviaId: 1,
+            triviaId: null, // Usar null para indicar que se debe obtener por tipo "normal"
             windowImage: 'assets/images/rachacoop/racha-window/racha-window-03.png',
           );
         default:

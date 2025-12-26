@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'user_manager.dart';
 import 'widgets/animated_profile_image.dart';
 import 'services/daily_challenge_service.dart';
@@ -81,8 +83,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       curve: Curves.easeInOutCubic,
     ));
     
-    // Verificar y mostrar reto diario automáticamente después de que la pantalla se carga
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Verificar y mostrar trivia de recuperación o reto diario automáticamente después de que la pantalla se carga
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Primero verificar si hay una trivia de recuperación pendiente
+      await _checkAndShowRecoveryTrivia();
+      // Luego verificar el reto diario normal
       _checkAndShowDailyChallenge();
     });
   }
@@ -107,6 +112,121 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         await _centerButtonPlayer.play(AssetSource('audios/ding.mp3'));
       } catch (_) {}
     }
+  }
+  
+  /// Verificar y mostrar trivia de recuperación si está pendiente
+  Future<void> _checkAndShowRecoveryTrivia() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final pendingRecoveryTrivia = prefs.getBool('pending_recovery_trivia') ?? false;
+      
+      if (!pendingRecoveryTrivia) {
+        print('ℹ️ No hay trivia de recuperación pendiente');
+        return;
+      }
+      
+      print('🔥 Trivia de recuperación pendiente detectada');
+      
+      // Limpiar la flag pendiente
+      await prefs.setBool('pending_recovery_trivia', false);
+      
+      // Esperar un poco para que la pantalla esté completamente cargada
+      await Future.delayed(Duration(milliseconds: 500));
+      
+      if (!mounted) {
+        print('❌ Widget no está montado, no se puede mostrar trivia');
+        return;
+      }
+      
+      final userManager = Provider.of<UserManager>(context, listen: false);
+      final user = userManager.currentUser;
+      
+      if (user == null || user['id'] == null) {
+        print('❌ No se puede obtener trivia: user_id inválido');
+        return;
+      }
+
+      // Buscar trivia de recuperación por tipo
+      final response = await http.get(
+        Uri.parse('https://zumuradigital.com/app-oblatos-login/get_trivia.php?tipo=recuperacion_racha'),
+      );
+
+      if (response.statusCode != 200) {
+        print('❌ Error al obtener la trivia: ${response.statusCode}');
+        // Intentar con trivia normal como alternativa
+        final fallbackResponse = await http.get(
+          Uri.parse('https://zumuradigital.com/app-oblatos-login/get_trivia.php?trivia_id=1'),
+        );
+        
+        if (fallbackResponse.statusCode == 200) {
+          final fallbackData = jsonDecode(fallbackResponse.body);
+          if (fallbackData['success'] == true && fallbackData['trivia'] != null) {
+            print('✅ Usando trivia normal como alternativa');
+            final trivia = fallbackData['trivia'];
+            await _showRecoveryTriviaDialog(trivia);
+          }
+        }
+        return;
+      }
+
+      final data = jsonDecode(response.body);
+      if (data['success'] != true || data['trivia'] == null) {
+        print('❌ No se pudo cargar la trivia: ${data['error'] ?? 'unknown'}');
+        // Intentar con trivia normal como alternativa
+        final fallbackResponse = await http.get(
+          Uri.parse('https://zumuradigital.com/app-oblatos-login/get_trivia.php?trivia_id=1'),
+        );
+        
+        if (fallbackResponse.statusCode == 200) {
+          final fallbackData = jsonDecode(fallbackResponse.body);
+          if (fallbackData['success'] == true && fallbackData['trivia'] != null) {
+            print('✅ Usando trivia normal como alternativa');
+            final trivia = fallbackData['trivia'];
+            await _showRecoveryTriviaDialog(trivia);
+          }
+        }
+        return;
+      }
+
+      final trivia = data['trivia'];
+      await _showRecoveryTriviaDialog(trivia);
+    } catch (e) {
+      print('❌ Error mostrando trivia de recuperación: $e');
+    }
+  }
+  
+  /// Mostrar el diálogo de trivia de recuperación
+  Future<void> _showRecoveryTriviaDialog(Map<String, dynamic> trivia) async {
+    if (!mounted) {
+      print('❌ Context no está montado, no se puede mostrar trivia');
+      return;
+    }
+    
+    final opciones = trivia['opciones'] as List<dynamic>? ?? [];
+    if (opciones.isEmpty) {
+      print('❌ La trivia no tiene opciones');
+      return;
+    }
+    
+    final triviaId = trivia['id'] as int? ?? 1;
+    final pregunta = trivia['pregunta'] ?? 'Pregunta no disponible';
+    final respuestaCorrectaId = trivia['respuesta_correcta_id'] as int?;
+    
+    final userManager = Provider.of<UserManager>(context, listen: false);
+    
+    print('🎯 Mostrando trivia de recuperación con ID: $triviaId');
+    
+    await ChallengeHelper.showRecoveryTrivia(
+      context,
+      triviaId,
+      pregunta,
+      opciones,
+      respuestaCorrectaId,
+      _challengeService,
+      userManager,
+    );
+    
+    print('🎯 Trivia de recuperación completada');
   }
   
   /// Verificar y mostrar el reto diario si no se ha mostrado hoy
@@ -161,15 +281,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           builder: (BuildContext dialogContext) {
             return DailyChallengeOverlay(
               challenge: challenge,
+              parentContext: context, // Pasar el contexto del HomeScreen
               onClose: () {
                 Navigator.of(dialogContext).pop();
               },
               onChallengeAccepted: () async {
+                print('🎯 onChallengeAccepted llamado en menu.dart');
                 Navigator.of(dialogContext).pop();
                 // Marcar el reto como aceptado (esto también guarda lastShown)
                 await _challengeService.acceptChallenge();
                 
                 // Navegar según el tipo de reto
+                print('🎯 Tipo de reto: ${challenge.type}');
                 if (challenge.type == ChallengeType.coins) {
                   // Navegar al juego
                   Navigator.pushNamed(context, '/juego');
@@ -196,14 +319,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     Navigator.pushNamed(context, '/video-blog');
                   }
                 } else if (challenge.type == ChallengeType.trivia) {
-                  // Mostrar trivia directamente
-                  final userManager = Provider.of<UserManager>(context, listen: false);
-                  ChallengeHelper.showTriviaChallenge(
-                    context,
-                    challenge,
-                    _challengeService,
-                    userManager,
-                  );
+                  // Para trivia, el overlay se manejará internamente
+                  // No necesitamos hacer nada aquí, el botón "Ver Trivia" cargará las opciones
+                  print('🎯 Trivia se manejará desde el overlay');
                 }
               },
             );

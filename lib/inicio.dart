@@ -6,9 +6,6 @@ import 'dart:convert';
 import 'menu.dart';
 import 'services/snippet_service.dart';
 import 'user_manager.dart';
-import 'services/daily_challenge_service.dart';
-import 'widgets/daily_challenge_overlay.dart';
-import 'utils/challenge_helper.dart';
 
 void main() {
   runApp(const MyApp());
@@ -499,15 +496,17 @@ class _InicioPageState extends State<InicioPage> {
           // Reanudar snippets
           try { SnippetService().setGameOrCalculatorActive(false); } catch (_) {}
           
-          // Si se rompió la racha, mostrar trivia de recuperación ANTES de navegar
+          // Si se rompió la racha, marcar que se debe mostrar la trivia de recuperación
+          // La trivia se mostrará desde el HomeScreen después de navegar
           if (rachaRota && mounted) {
-            print('🔥 Mostrando trivia de recuperación...');
-            await _mostrarTriviaRecuperacion(context, userManager);
+            print('🔥 Marcando trivia de recuperación pendiente...');
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('pending_recovery_trivia', true);
           } else {
-            print('ℹ️ No se muestra trivia: rachaRota=$rachaRota, mounted=$mounted');
+            print('ℹ️ No se marca trivia: rachaRota=$rachaRota, mounted=$mounted');
           }
           
-          // Navegar al menú después de mostrar la trivia (o si no hay trivia)
+          // Navegar al menú (la trivia de recuperación se mostrará desde ahí)
           if (mounted) {
             Navigator.pushReplacement(
               context,
@@ -1539,147 +1538,4 @@ class _InicioPageState extends State<InicioPage> {
     );
   }
 
-  /// Mostrar trivia de recuperación cuando se rompe la racha
-  Future<void> _mostrarTriviaRecuperacion(BuildContext context, UserManager userManager) async {
-    try {
-      print('🎯 Iniciando _mostrarTriviaRecuperacion');
-      final challengeService = DailyChallengeService();
-      
-      // Marcar que se mostró la trivia de recuperación para evitar que se muestre el reto diario
-      final prefs = await SharedPreferences.getInstance();
-      final today = DateTime.now();
-      final todayKey = '${today.year}-${today.month}-${today.day}';
-      await prefs.setBool('recovery_trivia_shown_$todayKey', true);
-      print('🎯 Marcado recovery_trivia_shown para hoy');
-      
-      // Obtener la trivia completa desde el servidor
-      try {
-        final user = userManager.currentUser;
-        if (user == null || user['id'] == null) {
-          print('❌ No se puede obtener trivia: user_id inválido');
-          return;
-        }
-
-        // Buscar trivia de recuperación por tipo en lugar de ID fijo
-        final response = await http.get(
-          Uri.parse('https://zumuradigital.com/app-oblatos-login/get_trivia.php?tipo=recuperacion_racha'),
-        );
-
-        if (response.statusCode != 200) {
-          print('❌ Error al obtener la trivia: ${response.statusCode}');
-          return;
-        }
-
-        final data = jsonDecode(response.body);
-        if (data['success'] != true || data['trivia'] == null) {
-          print('❌ No se pudo cargar la trivia: ${data['error'] ?? 'unknown'}');
-          
-          // Si no hay trivia de recuperación, intentar con una trivia normal
-          print('🔄 Intentando obtener trivia normal como alternativa...');
-          final fallbackResponse = await http.get(
-            Uri.parse('https://zumuradigital.com/app-oblatos-login/get_trivia.php?trivia_id=1'),
-          );
-          
-          if (fallbackResponse.statusCode == 200) {
-            final fallbackData = jsonDecode(fallbackResponse.body);
-            if (fallbackData['success'] == true && fallbackData['trivia'] != null) {
-              print('✅ Usando trivia normal como alternativa');
-              // Continuar con la trivia normal
-              final trivia = fallbackData['trivia'];
-              final opciones = trivia['opciones'] as List<dynamic>? ?? [];
-              
-              if (opciones.isEmpty) {
-                print('❌ La trivia alternativa tampoco tiene opciones');
-                return;
-              }
-              
-              // Convertir opciones a TriviaOption
-              final triviaOptions = opciones.map((opt) {
-                return TriviaOption(
-                  id: opt['id'] as int? ?? 0,
-                  texto: opt['texto'] ?? opt['text'] ?? '',
-                  orden: opt['orden'] as int? ?? 0,
-                );
-              }).toList();
-              
-              // Crear reto de recuperación con las opciones
-              final recoveryChallenge = DailyChallenge(
-                type: ChallengeType.trivia,
-                title: '¡Recupera tu Racha!',
-                description: 'Responde correctamente esta trivia para recuperar tu racha y no perderla',
-                triviaId: trivia['id'] as int? ?? 1,
-                windowImage: 'assets/images/rachacoop/racha-window/racha-window-01.png',
-                triviaOptions: triviaOptions,
-              );
-              
-              print('🎯 Reto de recuperación creado con ${triviaOptions.length} opciones (trivia alternativa)');
-              
-              // Mostrar directamente la trivia usando ChallengeHelper
-              if (!mounted) {
-                print('❌ Context no está montado, no se puede mostrar trivia');
-                return;
-              }
-              
-              await ChallengeHelper.showTriviaChallenge(
-                context,
-                recoveryChallenge,
-                challengeService,
-                userManager,
-              );
-              
-              print('🎯 _mostrarTriviaRecuperacion completado (con trivia alternativa)');
-              return;
-            }
-          }
-          
-          print('❌ No se pudo obtener ninguna trivia disponible');
-          return;
-        }
-
-        final trivia = data['trivia'];
-        final opciones = trivia['opciones'] as List<dynamic>? ?? [];
-
-        // Convertir opciones a TriviaOption
-        final triviaOptions = opciones.map((opt) {
-          return TriviaOption(
-            id: opt['id'] as int? ?? 0,
-            texto: opt['texto'] ?? opt['text'] ?? '',
-            orden: opt['orden'] as int? ?? 0,
-          );
-        }).toList();
-
-        // Crear reto de recuperación con las opciones
-        final recoveryChallenge = DailyChallenge(
-          type: ChallengeType.trivia,
-          title: '¡Recupera tu Racha!',
-          description: 'Responde correctamente esta trivia para recuperar tu racha y no perderla',
-          triviaId: 1,
-          windowImage: 'assets/images/rachacoop/racha-window/racha-window-01.png',
-          triviaOptions: triviaOptions,
-        );
-
-        print('🎯 Reto de recuperación creado con ${triviaOptions.length} opciones');
-
-        // Mostrar directamente la trivia usando ChallengeHelper (que tiene los botones)
-        if (!mounted) {
-          print('❌ Context no está montado, no se puede mostrar trivia');
-          return;
-        }
-        
-        await ChallengeHelper.showTriviaChallenge(
-          context,
-          recoveryChallenge,
-          challengeService,
-          userManager,
-        );
-        
-        print('🎯 _mostrarTriviaRecuperacion completado');
-      } catch (e) {
-        print('❌ Error obteniendo trivia de recuperación: $e');
-      }
-    } catch (e) {
-      print('❌ Error mostrando trivia de recuperación: $e');
-      print('❌ Stack trace: ${StackTrace.current}');
-    }
-  }
 }

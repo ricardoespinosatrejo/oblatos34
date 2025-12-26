@@ -4,7 +4,6 @@ import 'user_manager.dart';
 import 'services/daily_challenge_service.dart';
 import 'widgets/daily_challenge_overlay.dart';
 import 'widgets/header_navigation.dart';
-import 'utils/challenge_helper.dart';
 
 class RachacoopScreen extends StatefulWidget {
   @override
@@ -127,13 +126,25 @@ class _RachacoopScreenState extends State<RachacoopScreen> {
       return;
     }
     
-    // Mostrar la trivia usando el helper
-    final userManager = Provider.of<UserManager>(context, listen: false);
-    await ChallengeHelper.showTriviaChallenge(
-      context,
-      _todayChallenge!,
-      _challengeService,
-      userManager,
+    // Mostrar el overlay de trivia (el overlay manejará la carga de opciones internamente)
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return DailyChallengeOverlay(
+          challenge: _todayChallenge!,
+          parentContext: context, // Pasar el contexto de RachacoopScreen
+          onClose: () {
+            Navigator.of(dialogContext).pop();
+          },
+          onChallengeAccepted: () {
+            // Marcar como aceptado
+            _challengeService.acceptChallenge().then((_) {
+              _checkChallengeStatus();
+            });
+          },
+        );
+      },
     );
     
     // Refrescar el estado después de cerrar la trivia
