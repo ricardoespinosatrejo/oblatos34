@@ -27,7 +27,7 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
   bool _showVideoList = true; // Controla si mostrar la lista o el video
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
-  ScrollController _textScrollController = ScrollController();
+  Map<int, ScrollController> _textScrollControllers = {};
   
   // Variables para animación de fade-in secuencial
   List<bool> _buttonVisible = List.generate(5, (index) => false);
@@ -72,7 +72,9 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
   void dispose() {
     _videoController?.dispose();
     _chewieController?.dispose();
-    _textScrollController.dispose();
+    // Desechar todos los controladores de scroll
+    _textScrollControllers.values.forEach((controller) => controller.dispose());
+    _textScrollControllers.clear();
     _submenuAnimationController.dispose();
     _audioPlayer.dispose();
     super.dispose();
@@ -98,16 +100,25 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
     }
   }
   
+  // Obtiene o crea un ScrollController para un video específico
+  ScrollController _getScrollController(int videoIndex) {
+    if (!_textScrollControllers.containsKey(videoIndex)) {
+      _textScrollControllers[videoIndex] = ScrollController();
+    }
+    return _textScrollControllers[videoIndex]!;
+  }
+
   // Anima el scroll del texto para mostrar que se puede hacer scroll
-  void _animateTextScroll() {
-    if (_textScrollController.hasClients) {
+  void _animateTextScroll(int videoIndex) {
+    final controller = _textScrollControllers[videoIndex];
+    if (controller != null && controller.hasClients) {
       // Ir al final del texto
-      _textScrollController.jumpTo(_textScrollController.position.maxScrollExtent);
+      controller.jumpTo(controller.position.maxScrollExtent);
       
       // Después de un breve delay, animar hacia el principio
       Future.delayed(Duration(milliseconds: 500), () {
-        if (_textScrollController.hasClients) {
-          _textScrollController.animateTo(
+        if (controller.hasClients) {
+          controller.animateTo(
             0,
             duration: Duration(milliseconds: 1500),
             curve: Curves.easeOutCubic,
@@ -476,7 +487,7 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
                                     child: Stack(
                                       children: [
                                         SingleChildScrollView(
-                                          controller: _textScrollController,
+                                          controller: _getScrollController(videoIndex),
                                           child: Text(
                                             _getVideoBody(videoIndex),
                                             style: TextStyle(
@@ -679,7 +690,7 @@ class _VideoBlogScreenState extends State<VideoBlogScreen> with TickerProviderSt
     
     // Animar el scroll del texto después de que se muestre la ficha
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _animateTextScroll();
+      _animateTextScroll(videoIndex);
     });
     
     try {
