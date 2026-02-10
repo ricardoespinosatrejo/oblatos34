@@ -10,9 +10,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 // Configuración de la base de datos - CAMBIAR ESTAS CREDENCIALES
 $host = 'localhost';
-$dbname = 'Caja_OblatosMX'; // Tu nombre de base de datos
-$username = 'Caja_OblatosMX'; // Tu usuario de MySQL
-$password = '5556374784Mexico***'; // Tu contraseña de MySQL
+$dbname = 'playcoop_Caja_OblatosMX'; // Tu nombre de base de datos
+$username = 'playcoop'; // Tu usuario de MySQL
+$password = '+B1xv*25Y2rQmT'; // Tu contraseña de MySQL
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);

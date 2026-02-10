@@ -9,7 +9,7 @@
     
     
     <application
-        android:label="oblatos34"
+        android:label="PlayCoop"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

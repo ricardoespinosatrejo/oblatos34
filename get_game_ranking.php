@@ -10,9 +10,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
 
 // Configuración de la base de datos
 $host = 'localhost';
-$dbname = 'Caja_OblatosMX'; // Cambiar por el nombre de tu base de datos
-$username = 'Caja_OblatosMX'; // Cambiar por tu usuario de MySQL
-$password = '5556374784Mexico***'; // Cambiar por tu contraseña de MySQL
+$dbname = 'playcoop_Caja_OblatosMX'; // Cambiar por el nombre de tu base de datos
+$username = 'playcoop'; // Cambiar por tu usuario de MySQL
+$password = '+B1xv*25Y2rQmT'; // Cambiar por tu contraseña de MySQL
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);

@@ -18,9 +18,9 @@ $userId = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
 $usernameFilter = isset($_GET['username']) ? trim($_GET['username']) : '';
 
 $host = 'localhost';
-$dbname = 'Caja_OblatosMX';
-$username = 'Caja_OblatosMX';
-$password = '5556374784Mexico***';
+$dbname = 'playcoop_Caja_OblatosMX';
+$username = 'playcoop';
+$password = '+B1xv*25Y2rQmT';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);

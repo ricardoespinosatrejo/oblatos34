@@ -4,9 +4,9 @@
 
 // Configuración de la base de datos
 $host = 'localhost';
-$dbname = 'Caja_OblatosMX';
-$username = 'Caja_OblatosMX';
-$password = '5556374784Mexico***';
+$dbname = 'playcoop_Caja_OblatosMX';
+$username = 'playcoop';
+$password = '+B1xv*25Y2rQmT';
 
 // Configuración de Google Calendar API
 $apiKey = 'AIzaSyA0jeJ-Fck1MyOq_6_FaUQV6YOnGE3vZwU';

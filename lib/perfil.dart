@@ -765,7 +765,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
         final ultimaSesion = userManager.ultimaSesion;
         final fechaInicioRacha = userManager.fechaInicioRacha;
         final puntosApp = userManager.puntos;
-        final puntosSnippets = userManager.puntosSnippets;
+        final puntosRachaPuntos = userManager.rachaPoints;
         final puntosDiarios = userManager.puntosDiarios;
         final puntosRacha = userManager.rachaDias;
         final puntosJuego = userManager.gamePoints;
@@ -794,7 +794,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildPuntosDetalleItem('Puntos App (totales)', '$puntosApp', Colors.deepPurpleAccent),
-                  _buildPuntosDetalleItem('Puntos por Snippets', '$puntosSnippets', Colors.purple.shade200),
+                  _buildPuntosDetalleItem('Puntos por Racha', '$puntosRachaPuntos', Colors.purple.shade200),
                   _buildPuntosDetalleItem('Puntos por Sesiones Diarias', '$puntosDiarios', Colors.purple.shade200),
                   _buildPuntosDetalleItem('Racha actual', '${puntosRacha} días', Colors.purple.shade200),
                   SizedBox(height: 10),
@@ -860,7 +860,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
         return Consumer<UserManager>(
           builder: (context, userManager, child) {
             final puntosApp = userManager.puntos;
-            final puntosSnippets = userManager.puntosSnippets;
+            final puntosRachaPuntos = userManager.rachaPoints;
             final puntosDiarios = userManager.puntosDiarios;
             final puntosRacha = userManager.rachaDias;
             final puntosJuego = userManager.gamePoints;
@@ -884,7 +884,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildPuntosDetalleItem('Puntos App (totales)', '$puntosApp', Colors.deepPurpleAccent),
-                  _buildPuntosDetalleItem('Puntos por Snippets', '$puntosSnippets', Colors.purple.shade200),
+                  _buildPuntosDetalleItem('Puntos por Racha', '$puntosRachaPuntos', Colors.purple.shade200),
                   _buildPuntosDetalleItem('Puntos por Sesiones Diarias', '$puntosDiarios', Colors.purple.shade200),
                   _buildPuntosDetalleItem('Racha actual', '${puntosRacha} días', Color(0xFF9C27B0)),
                   SizedBox(height: 10),
