@@ -2164,7 +2164,7 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
       _currentUsername = username;
       
       final response = await http.post(
-        Uri.parse('https://zumuradigital.com/app-oblatos-login/save_game_score.php'), // Tu URL actualizada
+        Uri.parse('https://playcoop.com.mx/admin-playcoop/save_game_score.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'user_id': userId,
@@ -2180,7 +2180,13 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
         if (data['success']) {
           print('Puntaje guardado correctamente: ${data['score_id']}');
           userManager.refreshGamePoints();
-          _loadTop10();
+          // Dar tiempo para que el usuario lea la pantalla de resultados
+          Future.delayed(Duration(seconds: 6), () {
+            if (!mounted) return;
+            if (!_showRanking) {
+              _loadTop10();
+            }
+          });
         } else {
           print('Error al guardar puntaje: ${data['error']}');
         }
@@ -2193,16 +2199,17 @@ class _GameScreenState extends State<GameScreen> with TickerProviderStateMixin {
   }
 
   Future<void> _loadTop10() async {
+    if (_loadingRanking || _showRanking) return;
     try {
       setState(() {
         _loadingRanking = true;
       });
       
-      print('🎮 Cargando ranking desde: https://zumuradigital.com/app-oblatos-login/get_game_ranking.php?type=highest&limit=10');
+      print('🎮 Cargando ranking desde: https://playcoop.com.mx/admin-playcoop/get_game_ranking.php?type=highest&limit=10');
       
-      // Usar el mismo backend donde ya funciona el ranking (app-oblatos-login)
+      // Usar el backend oficial de PlayCoop
       final res = await http.get(
-        Uri.parse('https://zumuradigital.com/app-oblatos-login/get_game_ranking.php?type=highest&limit=10')
+        Uri.parse('https://playcoop.com.mx/admin-playcoop/get_game_ranking.php?type=highest&limit=10')
       );
       
       print('🎮 Respuesta ranking: ${res.statusCode} - ${res.body}');

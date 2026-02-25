@@ -20,6 +20,7 @@ try {
                 u.fecha_registro,
                 u.puntos,
                 u.puntos_diarios,
+                u.racha_points,
                 u.ultima_sesion,
                 u.racha_dias,
                 u.fecha_inicio_racha,
@@ -33,7 +34,7 @@ try {
             LEFT JOIN snippet_points sp ON u.id = sp.user_id
             GROUP BY u.id, u.nombre_usuario, u.nombre_menor, u.rango_edad, 
                      u.nombre_padre_madre, u.email, u.telefono, u.fecha_registro,
-                     u.puntos, u.puntos_diarios, u.ultima_sesion, u.racha_dias,
+                     u.puntos, u.puntos_diarios, u.racha_points, u.ultima_sesion, u.racha_dias,
                      u.fecha_inicio_racha, u.ultimo_bonus_racha, u.profile_image
             ORDER BY u.fecha_registro DESC";
     
@@ -47,6 +48,7 @@ try {
         // Asegurar que los campos de puntos tengan valores por defecto
         $usuario['puntos'] = $usuario['puntos'] ?? 0;
         $usuario['puntos_diarios'] = $usuario['puntos_diarios'] ?? 0;
+        $usuario['racha_points'] = $usuario['racha_points'] ?? 0;
         $usuario['racha_dias'] = $usuario['racha_dias'] ?? 0;
         $usuario['profile_image'] = $usuario['profile_image'] ?? 1;
         

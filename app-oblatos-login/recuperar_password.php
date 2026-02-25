@@ -73,7 +73,8 @@ try {
     $ins->execute([$user['id'], $token, $expiresAt]);
 
     // URL base del sitio (ajustar dominio si cambia ruta)
-    $baseUrl = 'https://zumuradigital.com/app-oblatos-login';
+    // Aquí asumimos que reset_password.php estará en la raíz de admin-playcoop
+    $baseUrl = 'https://playcoop.com.mx/admin-playcoop';
     $resetLink = $baseUrl . '/reset_password.php?token=' . urlencode($token);
 
     // Cargar configuración SMTP y helper
@@ -82,15 +83,15 @@ try {
 
     // Preparar email con mejor formato para Gmail
     $to = $user['email'];
-    $subject = 'Restablecer tu contraseña - Oblatos 34';
+    $subject = 'Recuperación de Password de PlayCoop';
     $message = "Hola {$user['nombre_usuario']},\n\n".
-               "Recibimos una solicitud para restablecer la contraseña de tu cuenta.\n\n".
-               "Para crear una nueva contraseña, haz clic en el siguiente enlace:\n".
+               "Recibimos una solicitud para restablecer el password de tu cuenta de PlayCoop.\n\n".
+               "Para crear un nuevo password, haz clic en el siguiente enlace:\n\n".
                "$resetLink\n\n".
                "Este enlace será válido por 1 hora.\n\n".
-               "Si no solicitaste este cambio, puedes ignorar este mensaje de forma segura.\n\n".
+               "Si tú no solicitaste este cambio, puedes ignorar este mensaje de forma segura.\n\n".
                "Saludos,\n".
-               "Equipo Oblatos 34";
+               "Equipo PlayCoop";
 
     // Enviar correo usando SMTP
     try {

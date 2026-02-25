@@ -41,9 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 FROM game_scores gs
                 GROUP BY gs.user_id, gs.username
                 ORDER BY highest_score DESC, highest_level DESC
-                LIMIT ?
+                LIMIT $limit
             ");
-            $stmt->execute([$limit]);
+            $stmt->execute();
             
         } elseif ($type === 'recent') {
             // Ranking por puntajes recientes
@@ -57,9 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                     game_date as last_played
                 FROM game_scores
                 ORDER BY game_date DESC
-                LIMIT ?
+                LIMIT $limit
             ");
-            $stmt->execute([$limit]);
+            $stmt->execute();
             
         } elseif ($type === 'level') {
             // Ranking por nivel más alto alcanzado
@@ -74,9 +74,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
                 FROM game_scores gs
                 GROUP BY gs.user_id, gs.username
                 ORDER BY highest_level DESC, highest_score DESC
-                LIMIT ?
+                LIMIT $limit
             ");
-            $stmt->execute([$limit]);
+            $stmt->execute();
             
         } else {
             echo json_encode(['success' => false, 'error' => 'Tipo de ranking inválido']);

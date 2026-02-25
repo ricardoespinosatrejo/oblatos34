@@ -234,7 +234,7 @@ class _CajaScreenState extends State<CajaScreen> with TickerProviderStateMixin, 
     );
   }
 
-  // Ficha principal de Caja Oblatos
+  // Ficha principal de Caja PlayCoop
   Widget _buildFichaPrincipal() {
     return Stack(
       children: [

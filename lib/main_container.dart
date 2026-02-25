@@ -856,7 +856,7 @@ class CajaScreenContent extends StatelessWidget {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 40),
                     child: Text(
-                      'Sistema de gestión cooperativa para la comunidad Oblatos',
+                      'Sistema de gestión cooperativa para la comunidad PlayCoop',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Gotham Rounded',

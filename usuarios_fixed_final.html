@@ -108,7 +108,12 @@
                 return;
             }
             
-            const html = usuarios.map(usuario => `
+            const html = usuarios.map(usuario => {
+                const rachaPoints = Number(usuario.racha_points) || 0;
+                const rachaDias = Number(usuario.racha_dias) || 0;
+                const ultimaSesion = usuario.ultima_sesion;
+
+                return `
                 <tr>
                     <td>${usuario.id}</td>
                     <td>${usuario.nombre_usuario}</td>
@@ -117,12 +122,13 @@
                     <td>${usuario.nombre_padre_madre || 'N/A'}</td>
                     <td>${usuario.email || 'N/A'}</td>
                     <td>${usuario.telefono || 'N/A'}</td>
-                    <td class="${formatearPuntos(usuario.racha_points)}">${usuario.racha_points || 0}</td>
-                    <td class="${formatearRacha(usuario.racha_dias)}">${usuario.racha_dias || 0}</td>
-                    <td class="${formatearUltimaSesion(usuario.ultima_sesion)}">${formatearUltimaSesion(usuario.ultima_sesion)}</td>
+                    <td class="${formatearPuntos(rachaPoints)}">${rachaPoints}</td>
+                    <td class="${formatearRacha(rachaDias)}">${rachaDias}</td>
+                    <td class="${formatearUltimaSesion(ultimaSesion)}">${formatearUltimaSesion(ultimaSesion)}</td>
                     <td>${formatearFecha(usuario.fecha_registro)}</td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
             
             tbody.innerHTML = html;
             console.log('Tabla actualizada con', usuarios.length, 'usuarios');
@@ -138,7 +144,10 @@
             }
             
             const totalUsuarios = usuarios.length;
-            const totalPuntos = usuarios.reduce((sum, u) => sum + (u.racha_points || 0), 0);
+            const totalPuntos = usuarios.reduce((sum, u) => {
+                const puntos = Number(u.racha_points) || 0;
+                return sum + puntos;
+            }, 0);
             const promedioPuntos = totalUsuarios > 0 ? Math.round(totalPuntos / totalUsuarios) : 0;
             const usuariosConRacha = usuarios.filter(u => (u.racha_dias || 0) > 0).length;
             const rachaMaxima = Math.max(...usuarios.map(u => u.racha_dias || 0));

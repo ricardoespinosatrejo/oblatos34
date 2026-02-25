@@ -3,20 +3,21 @@
 // Ajusta estos valores según tu proveedor de hosting/correo
 
 return [
-    'enabled' => false, // Cambiar a false para deshabilitar SMTP y usar mail() nativo
+    'enabled' => true, // Usar SMTP para envío
     
-    // Configuración SMTP
-    'host' => 'zumuradigital.com', // Cambiar a 'mail.zumuradigital.com' si smtp no funciona
-    'port' => 465, // Puerto común: 587 (TLS), 465 (SSL), 25 (sin cifrado)
+    // Configuración SMTP (ajusta host/puerto si tu hosting indica otros valores)
+    // Si falla, prueba: 'host' => 'smtp.playcoop.com.mx', 'port' => 587, 'encryption' => 'tls'
+    'host' => 'mail.playcoop.com.mx',
+    'port' => 465, // 465 (SSL) o 587 (TLS) según hosting
     'encryption' => 'ssl', // 'tls', 'ssl', o '' (sin cifrado)
     
     // Credenciales del servidor SMTP
-    'username' => 'contacto-app@zumuradigital.com', // Email que envía los mensajes
-    'password' => '5540855457Mexico***', // Password de la cuenta o "App Password" si usas Gmail
+    'username' => 'password@playcoop.com.mx', // Email que envía los mensajes
+    'password' => 'U=d&ByysDn4zd#SF', // Password de la cuenta
     
     // Remitente
-    'from_email' => 'contacto-app@zumuradigital.com',
-    'from_name' => 'Contacto App Oblatos',
+    'from_email' => 'password@playcoop.com.mx',
+    'from_name' => 'Recuperación de contraseña Oblatos34',
     
     // Configuración adicional
     'timeout' => 30, // Timeout en segundos

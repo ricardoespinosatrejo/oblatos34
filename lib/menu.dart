@@ -246,15 +246,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       final isCompleted = await _challengeService.isChallengeCompleted();
       final recoveryTriviaShown = prefs.getBool('recovery_trivia_shown_$todayKey') ?? false;
       final isAccepted = await _challengeService.isChallengeAccepted();
+      // Para trivias: verificar si ya se intentó responder hoy (aunque haya sido incorrecta)
+      final isTriviaAttempted = challenge.type == ChallengeType.trivia
+          ? await _challengeService.isTriviaAttempted()
+          : false;
       
-      print('🎯 Verificando reto diario: lastShown=$lastShown, todayKey=$todayKey, isCompleted=$isCompleted, isAccepted=$isAccepted, recoveryTriviaShown=$recoveryTriviaShown');
+      print('🎯 Verificando reto diario: lastShown=$lastShown, todayKey=$todayKey, isCompleted=$isCompleted, isAccepted=$isAccepted, recoveryTriviaShown=$recoveryTriviaShown, isTriviaAttempted=$isTriviaAttempted');
       
       // Mostrar el reto si:
       // 1. No está completado
       // 2. No está aceptado (aunque se haya mostrado antes, si no se aceptó, se puede volver a mostrar)
       // 3. No se mostró la trivia de recuperación hoy
-      // 4. El widget está montado
-      if (!isCompleted && !isAccepted && !recoveryTriviaShown && mounted) {
+      // 4. Si es trivia, que NO haya sido intentada hoy
+      // 5. El widget está montado
+      final shouldShow =
+          !isCompleted &&
+          !isAccepted &&
+          !recoveryTriviaShown &&
+          !(challenge.type == ChallengeType.trivia && isTriviaAttempted) &&
+          mounted;
+
+      if (shouldShow) {
         print('🎯 Mostrando reto diario automáticamente');
         // Esperar más tiempo para asegurar que la pantalla esté completamente cargada
         // y que cualquier diálogo anterior (como la trivia de recuperación) se haya cerrado
@@ -269,9 +281,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         final isAcceptedAfterDelay = await _challengeService.isChallengeAccepted();
         final isCompletedAfterDelay = await _challengeService.isChallengeCompleted();
         final recoveryTriviaShownAfterDelay = prefs.getBool('recovery_trivia_shown_$todayKey') ?? false;
+        final isTriviaAttemptedAfterDelay = challenge.type == ChallengeType.trivia
+            ? await _challengeService.isTriviaAttempted()
+            : false;
         
-        if (isCompletedAfterDelay || isAcceptedAfterDelay || recoveryTriviaShownAfterDelay) {
-          print('ℹ️ Estado cambió después del delay: isCompleted=$isCompletedAfterDelay, isAccepted=$isAcceptedAfterDelay, recoveryTriviaShown=$recoveryTriviaShownAfterDelay');
+        if (isCompletedAfterDelay ||
+            isAcceptedAfterDelay ||
+            recoveryTriviaShownAfterDelay ||
+            (challenge.type == ChallengeType.trivia && isTriviaAttemptedAfterDelay)) {
+          print('ℹ️ Estado cambió después del delay: isCompleted=$isCompletedAfterDelay, isAccepted=$isAcceptedAfterDelay, recoveryTriviaShown=$recoveryTriviaShownAfterDelay, isTriviaAttempted=$isTriviaAttemptedAfterDelay');
           return;
         }
         
@@ -1911,7 +1929,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildNavItem('m-icono1.png', 'Caja\nOblatos', '/caja'),
+          _buildNavItem('m-icono1.png', 'Caja\nPlayCoop', '/caja'),
           _buildNavItem('m-icono2.png', 'Agentes\nCambio', '/agentes-cambio'),
           _buildCenterNavItem('m-icono3.png'),
           _buildNavItem('m-icono4.png', 'Eventos', '/eventos'),

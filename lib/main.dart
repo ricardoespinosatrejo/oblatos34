@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => UserManager(),
       child: MaterialApp(
-        title: 'Caja Oblatos - Bienvenida',
+        title: 'PlayCoop - Bienvenida',
         theme: ThemeData(
           primarySwatch: Colors.red,
           fontFamily: 'GothamRounded',

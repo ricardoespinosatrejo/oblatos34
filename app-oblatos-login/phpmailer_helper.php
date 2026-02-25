@@ -190,6 +190,23 @@ function sendEmailWithSMTP($to, $subject, $message, $config) {
 }
 
 /**
+ * Lee todas las líneas de una respuesta SMTP hasta la línea final (código seguido de espacio, ej. "250 OK").
+ * El servidor puede enviar varias líneas "250-algo"; hay que consumirlas todas.
+ */
+function _smtpReadResponse($socket) {
+    $lastLine = '';
+    while ($line = fgets($socket)) {
+        $line = trim($line);
+        $lastLine = $line;
+        // Línea final: código de 3 dígitos + espacio (ej. "235 OK") o solo código
+        if (preg_match('/^\d{3}\s/', $line) || (strlen($line) === 3 && ctype_digit($line))) {
+            break;
+        }
+    }
+    return $lastLine;
+}
+
+/**
  * Envío de email usando socket SMTP (sin dependencias externas)
  */
 function sendEmailWithSocketSMTP($to, $subject, $message, $config) {
@@ -218,45 +235,45 @@ function sendEmailWithSocketSMTP($to, $subject, $message, $config) {
     );
     
     if (!$socket) {
-        return false;
+        throw new Exception("No se pudo conectar al servidor SMTP ($host:$port): [$errno] $errstr");
     }
     
-    // Leer respuesta inicial
-    fgets($socket);
+    // Leer respuesta inicial (220)
+    _smtpReadResponse($socket);
     
     // EHLO
     fwrite($socket, "EHLO $host\r\n");
-    fgets($socket);
+    _smtpReadResponse($socket);
     
     // STARTTLS si es necesario
     if ($encryption === 'tls') {
         fwrite($socket, "STARTTLS\r\n");
-        fgets($socket);
+        _smtpReadResponse($socket);
         stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
         fwrite($socket, "EHLO $host\r\n");
-        fgets($socket);
+        _smtpReadResponse($socket);
     }
     
     // Autenticación
     fwrite($socket, "AUTH LOGIN\r\n");
-    fgets($socket);
+    _smtpReadResponse($socket);
     fwrite($socket, base64_encode($username) . "\r\n");
-    fgets($socket);
+    _smtpReadResponse($socket);
     fwrite($socket, base64_encode($password) . "\r\n");
-    $authResponse = fgets($socket);
+    $authResponse = _smtpReadResponse($socket);
     
-    if (strpos($authResponse, '235') === false) {
+    if (strpos($authResponse, '235') !== 0 && strpos($authResponse, '235 ') !== 0) {
         fclose($socket);
-        return false;
+        throw new Exception("SMTP autenticación fallida. Respuesta: " . trim($authResponse));
     }
     
     // Enviar email
     fwrite($socket, "MAIL FROM: <{$config['from_email']}>\r\n");
-    fgets($socket);
+    _smtpReadResponse($socket);
     fwrite($socket, "RCPT TO: <$to>\r\n");
-    fgets($socket);
+    _smtpReadResponse($socket);
     fwrite($socket, "DATA\r\n");
-    fgets($socket);
+    _smtpReadResponse($socket);
     
     $headers = "From: {$config['from_name']} <{$config['from_email']}>\r\n";
     $headers .= "To: <$to>\r\n";
@@ -265,7 +282,7 @@ function sendEmailWithSocketSMTP($to, $subject, $message, $config) {
     $headers .= "\r\n";
     
     fwrite($socket, $headers . $message . "\r\n.\r\n");
-    fgets($socket);
+    _smtpReadResponse($socket);
     fwrite($socket, "QUIT\r\n");
     fclose($socket);
     

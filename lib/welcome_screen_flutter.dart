@@ -309,7 +309,7 @@ class WelcomeScreen extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16),
       child: Text(
-        '¡Hola, futuro genio financiero! Te damos la bienvenida más cool al mundo de la app de finanzas para jóvenes de Caja Oblatos. Aquí no solo vas a aprender a administrar tu dinero, ¡vas a empoderarte de verdad!',
+        '¡Hola, futuro genio financiero! Te damos la bienvenida más cool al mundo de la app de finanzas para jóvenes de PlayCoop. Aquí no solo vas a aprender a administrar tu dinero, ¡vas a empoderarte de verdad!',
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,

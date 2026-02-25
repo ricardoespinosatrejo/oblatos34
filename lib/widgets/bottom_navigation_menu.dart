@@ -18,7 +18,7 @@ class BottomNavigationMenu extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildNavItem(context, 'm-icono1.png', 'Caja\nOblatos', '/caja'),
+          _buildNavItem(context, 'm-icono1.png', 'Caja\nPlayCoop', '/caja'),
           _buildNavItem(context, 'm-icono2.png', 'Agentes\nCambio', '/agentes-cambio'),
           _buildCenterNavItem('m-icono3.png'),
           _buildNavItem(context, 'm-icono4.png', 'Eventos', '/eventos'),

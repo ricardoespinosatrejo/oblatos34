@@ -17,7 +17,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Oblatos 34',
+      title: 'PlayCoop',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         fontFamily: 'Gotham Rounded',
@@ -56,6 +56,7 @@ class _InicioPageState extends State<InicioPage> {
   bool _showCrearCuentaForm = false;
   bool _showLoginForm = false;
   bool _showRecuperarPasswordForm = false;
+  bool _showAvisoPrivacidad = false;
   bool _usuarioYaExiste = false;
   bool _emailYaExiste = false;
 
@@ -103,7 +104,7 @@ class _InicioPageState extends State<InicioPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('https://zumuradigital.com/app-oblatos-login/verificar_usuario.php'),
+        Uri.parse('https://playcoop.com.mx/admin-playcoop/verificar_usuario.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'nombre_usuario': usuario}),
       );
@@ -134,7 +135,7 @@ class _InicioPageState extends State<InicioPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('https://zumuradigital.com/app-oblatos-login/verificar_email.php'),
+        Uri.parse('https://playcoop.com.mx/admin-playcoop/verificar_email.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email}),
       );
@@ -190,7 +191,7 @@ class _InicioPageState extends State<InicioPage> {
       print('Enviando datos de registro: $userData');
 
       final response = await http.post(
-        Uri.parse('https://zumuradigital.com/app-oblatos-login/registro.php'),
+        Uri.parse('https://playcoop.com.mx/admin-playcoop/registro.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(userData),
       );
@@ -275,7 +276,7 @@ class _InicioPageState extends State<InicioPage> {
       };
 
       final response = await http.post(
-        Uri.parse('https://zumuradigital.com/app-oblatos-login/login.php'),
+        Uri.parse('https://playcoop.com.mx/admin-playcoop/login.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(loginData),
       );
@@ -462,7 +463,7 @@ class _InicioPageState extends State<InicioPage> {
       print('Enviando datos de login: $loginData');
 
       final response = await http.post(
-        Uri.parse('https://zumuradigital.com/app-oblatos-login/login.php'),
+        Uri.parse('https://playcoop.com.mx/admin-playcoop/login.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(loginData),
       );
@@ -570,7 +571,7 @@ class _InicioPageState extends State<InicioPage> {
       print('Enviando solicitud de recuperación: $recoveryData');
       
       final response = await http.post(
-        Uri.parse('https://zumuradigital.com/app-oblatos-login/recuperar_password.php'),
+        Uri.parse('https://playcoop.com.mx/admin-playcoop/recuperar_password.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(recoveryData),
       );
@@ -833,7 +834,113 @@ class _InicioPageState extends State<InicioPage> {
                 ],
               ),
               
-              // Submenu eliminado en inicio
+              // Enlace Aviso de privacidad (siempre visible abajo)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 16,
+                child: Center(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() => _showAvisoPrivacidad = true);
+                    },
+                    child: Text(
+                      'Aviso de privacidad',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.85),
+                        fontSize: 12,
+                        decoration: TextDecoration.underline,
+                        decorationColor: Colors.white.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Pantalla de Aviso de privacidad (overlay)
+              if (_showAvisoPrivacidad) _buildAvisoPrivacidad(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Pantalla de Aviso de privacidad (mismo diseño que los formularios)
+  Widget _buildAvisoPrivacidad() {
+    return Material(
+      color: Colors.black54,
+      child: Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF161351).withValues(alpha: 0.95),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Aviso de privacidad',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.45,
+                ),
+                child: const SingleChildScrollView(
+                  child: Text(
+                    'En PlayCoop respetamos tu privacidad. La información que nos proporcionas en los formularios de registro e inicio de sesión (nombre de usuario, nombre completo, datos de contacto, correo electrónico y contraseña) es utilizada exclusivamente para el funcionamiento de la aplicación y para identificarte dentro del servicio.\n\n'
+                    'No compartimos, vendemos ni transferimos tu información personal a terceros. Tus datos se utilizan únicamente para gestionar tu cuenta y ofrecerte la experiencia dentro de la app.\n\n'
+                    'Si tienes preguntas sobre el uso de tus datos o deseas ejercer tus derechos de acceso, rectificación o cancelación, puedes contactarnos en:\n\n'
+                    'privacidad@playcoop.com.mx\n\n'
+                    'Última actualización: febrero 2025.',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () {
+                  setState(() => _showAvisoPrivacidad = false);
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(28),
+                    gradient: const LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [Color(0xFFFF1744), Color(0xFFE91E63)],
+                    ),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      'Cerrar ventana',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

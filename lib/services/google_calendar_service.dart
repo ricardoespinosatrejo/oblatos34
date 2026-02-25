@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class GoogleCalendarService {
-  static const String _calendarId = 'primary'; // O el ID específico del calendario de Caja Oblatos
+  static const String _calendarId = 'primary'; // O el ID específico del calendario de PlayCoop
   
   // Credenciales de la API (necesitarás configurar esto en Google Cloud Console)
   static const String _apiKey = 'TU_API_KEY_REAL_AQUI'; // Reemplaza con tu clave real
@@ -25,7 +25,7 @@ class GoogleCalendarService {
   Future<List<Evento>> getEventos() async {
     try {
       final response = await http.get(
-        Uri.parse('https://zumuradigital.com/app-oblatos-login/get_eventos.php'),
+        Uri.parse('https://playcoop.com.mx/admin-playcoop/get_eventos.php'),
       );
 
       if (response.statusCode == 200) {
