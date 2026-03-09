@@ -25,8 +25,14 @@ void main() async {
   await initializeDateFormatting('es_ES', null);
   // Android: Modo inmersivo (oculta barra del sistema; aparece con swipe)
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-  
-  
+
+  // Android 15: evitar llamadas a APIs obsoletas de color de barras del sistema
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarDividerColor: Colors.transparent,
+  ));
+
   runApp(MyApp());
 }
 
